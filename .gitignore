@@ -1,4 +1,6 @@
 .env
-node-modules
+node_modules
 package-lock.json
 logs
+combined.log
+error.log

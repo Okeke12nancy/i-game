@@ -2,7 +2,7 @@
   "name": "worktest",
   "version": "1.0.0",
   "main": "server-side/index.js",
-   "type": "module",
+  "type": "module",
   "scripts": {
     "dev": "concurrently --names \"SERVER,CLIENT\" --prefix-colors \"blue,green\" \"npm run server\" \"npm run client\"",
     "dev-server": "nodemon -r dotenv/config server-side/index.js",
@@ -18,13 +18,16 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0",
+    "express": "^4.18.2",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
     "winston": "^3.17.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10",
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.1.0",
+    "nodemon": "^3.1.10"
   }
 }

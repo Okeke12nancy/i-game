@@ -2,7 +2,7 @@ import Joi from 'joi';
 import logger from '../utils/logger.js';
 
 class ValidationMiddleware {
-  static validate(schema) {
+  validate(schema) {
     return (req, res, next) => {
       const { error } = schema.validate(req.body);
       
@@ -23,8 +23,7 @@ class ValidationMiddleware {
     };
   }
 
-  // Validation schemas
-  static schemas = {
+  schemas = {
     register: Joi.object({
       userName: Joi.string()
         .alphanum()
@@ -93,4 +92,5 @@ class ValidationMiddleware {
   };
 }
 
-export default ValidationMiddleware; 
+// export default ValidationMiddleware; 
+export default new ValidationMiddleware();

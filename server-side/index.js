@@ -21,11 +21,9 @@ class Server {
     }
 
     setupMiddleware() {
-        // Body parsing middleware
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         
-        // CORS middleware
         this.app.use((req, res, next) => {
             res.header('Access-Control-Allow-Origin', '*');
             res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -39,7 +37,6 @@ class Server {
     }
 
     setupRoutes() {
-        // Health check endpoint
         this.app.get('/health', (req, res) => {
             res.json({
                 success: true,
@@ -49,10 +46,8 @@ class Server {
             });
         });
 
-        // API routes
         this.app.use('/api/auth', authRouter);
 
-        // 404 handler
         this.app.use('*', (req, res) => {
             res.status(404).json({
                 success: false,
@@ -62,7 +57,6 @@ class Server {
     }
 
     setupErrorHandling() {
-        // Global error handler
         this.app.use((error, req, res, next) => {
             logger.error('Unhandled error:', error);
             

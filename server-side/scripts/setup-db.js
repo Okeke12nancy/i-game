@@ -14,7 +14,6 @@ async function setupDatabase() {
         await db.connect();
         logger.info('Connected to database');
 
-        // Create users table
         const createUsersTable = `
             CREATE TABLE IF NOT EXISTS users (
                 userId SERIAL PRIMARY KEY,
@@ -30,7 +29,6 @@ async function setupDatabase() {
         await db.query(createUsersTable);
         logger.info('Users table created successfully');
 
-        // Create games table for game history
         const createGamesTable = `
             CREATE TABLE IF NOT EXISTS games (
                 gameId SERIAL PRIMARY KEY,
