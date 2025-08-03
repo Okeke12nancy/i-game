@@ -7,6 +7,7 @@ import logger from './utils/logger.js';
 import { createServer } from 'http';
 
 import authRouter from './routes/authRoutes.js';
+import gameRouter from './routes/gameRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -47,6 +48,7 @@ class Server {
         });
 
         this.app.use('/api/auth', authRouter);
+        this.app.use('./api/auth', gameRouter)
 
         this.app.use('*', (req, res) => {
             res.status(404).json({

@@ -23,4 +23,4 @@ router.get('/sessions/recent', GameController.getRecentSessions);
 
 router.get('/sessions/:sessionId', GameController.getSessionDetails);
 
-export default router; 
+export default gameRouter; 
