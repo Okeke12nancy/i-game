@@ -1,6 +1,7 @@
 import express from 'express';
 import AuthController from '../controllers/AuthController.js';
 import ValidationMiddleware from '../middleware/validateMiddleware.js';
+import authMiddleware from '../middleware/authMiddleware.js';
 
 const authRouter = express.Router();
 
@@ -8,8 +9,8 @@ authRouter.post('/register', ValidationMiddleware.validate(ValidationMiddleware.
 
 authRouter.post('/login', ValidationMiddleware.validate(ValidationMiddleware.schemas.login), AuthController.login);
 
-router.get('/profile', 
-  AuthMiddleware.authenticateToken,
+authRouter.get('/profile', 
+  authMiddleware.authMiddlewares,
   AuthController.getProfile
 );
 

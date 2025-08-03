@@ -1,11 +1,11 @@
-import GameService from '../services/GameService.js';
-import GameSession from '../models/GameSession.js';
-import PlayerSession from '../models/PlayerSession.js';
-import User from '../models/User.js';
+import GameService from '../service/gameService.js';
+import GameSession from '../models/game.js';
+import PlayerSession from '../models/gamePlayer.js';
+import User from '../models/UserModel.js';
 import logger from '../utils/logger.js';
 
 class GameController {
-  static async getActiveSession(req, res) {
+  async getActiveSession(req, res) {
     try {
       const sessionInfo = GameService.getSessionInfo();
       
@@ -47,7 +47,7 @@ class GameController {
     }
   }
 
-  static async joinSession(req, res) {
+  async joinSession(req, res) {
     try {
       const { selectedNumber } = req.body;
       const userId = req.user.id;
@@ -70,7 +70,7 @@ class GameController {
     }
   }
 
-  static async leaveSession(req, res) {
+  async leaveSession(req, res) {
     try {
       const userId = req.user.id;
       const removed = await GameService.leaveSession(userId);
@@ -96,7 +96,7 @@ class GameController {
     }
   }
 
-  static async getUserSession(req, res) {
+  async getUserSession(req, res) {
     try {
       const userId = req.user.id;
       const activeSession = await PlayerSession.getUserActiveSession(userId);
@@ -139,7 +139,7 @@ class GameController {
     }
   }
 
-  static async getTopPlayers(req, res) {
+  async getTopPlayers(req, res) {
     try {
       const limit = parseInt(req.query.limit) || 10;
       const players = await User.getTopPlayers(limit);
@@ -160,7 +160,7 @@ class GameController {
     }
   }
 
-  static async getSessionsByDate(req, res) {
+  async getSessionsByDate(req, res) {
     try {
       const { date } = req.params;
       const sessions = await GameSession.getSessionsByDate(date);
@@ -206,7 +206,7 @@ class GameController {
     }
   }
 
-  static async getRecentSessions(req, res) {
+  async getRecentSessions(req, res) {
     try {
       const limit = parseInt(req.query.limit) || 10;
       const sessions = await GameSession.getRecentSessions(limit);
@@ -251,7 +251,7 @@ class GameController {
     }
   }
 
-  static async getSessionDetails(req, res) {
+  async getSessionDetails(req, res) {
     try {
       const { sessionId } = req.params;
       const session = await GameSession.findById(sessionId);
@@ -298,4 +298,4 @@ class GameController {
   }
 }
 
-export default GameController; 
+export default new GameController; 

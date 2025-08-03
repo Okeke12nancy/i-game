@@ -3,11 +3,11 @@ import AuthMiddleware from "../middleware/authMiddleware.js";
 import logger from '../utils/logger.js';
 
 class AuthController{
-    static async register(req, res){
+    async register(req, res){
         try{
             const {userName, password} = req.body;
 
-            const existingUser = await User.findByUserName(userName);
+            const existingUser = await User.findByUsername(userName);
             if(existingUser){
                 return res.status(400).json({
                     success: false,
@@ -16,7 +16,7 @@ class AuthController{
             }
 
             const user = await User.create(userName, password);
-            const token = AuthMiddleware.generateToken(user.userId);
+            const token = AuthMiddleware.generateToken(user.id);
 
             logger.info('User registered successfully:', {username: user.userName});
 
@@ -39,11 +39,11 @@ class AuthController{
         }
     }
 
-    static async login(req, res) {
+    async login(req, res) {
         try {
             const { userName, password } = req.body;
 
-            const user = await User.findByUserName(userName);
+            const user = await User.findByUsername(userName);
             if (!user) {
                 return res.status(401).json({
                     success: false,
@@ -59,7 +59,7 @@ class AuthController{
                 });
             }
 
-            const token = AuthMiddleware.generateToken(user.userId);
+            const token = AuthMiddleware.generateToken(user.id);
 
             logger.info('User logged in successfully:', { userName: user.userName });
 
@@ -102,4 +102,4 @@ class AuthController{
   }
 }
 
-export default AuthController;
+export default new AuthController;

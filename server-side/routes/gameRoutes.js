@@ -1,26 +1,26 @@
 import express from 'express';
-import GameController from '../controllers/gameController';
-import authMiddleware from '../middleware/authMiddleware';
-import validateMiddleware from '../middleware/validateMiddleware';
+import GameController from '../controllers/gameController.js';
+import authMiddleware from '../middleware/authMiddleware.js';
+import validateMiddleware from '../middleware/validateMiddleware.js';
 
 const gameRouter = express.Router();
 
-gameRouter.use(authMiddleware.authMiddleware)
+gameRouter.use(authMiddleware.authMiddlewares)
 
 gameRouter.get('/session/active', GameController.getActiveSession);
 
-gameRouter.post('./session/join', validateMiddleware.validate(validateMiddleware.schemas.selectNumber), authMiddleware.checkoutActiveSession, GameController.joinSession)
+gameRouter.post('/session/join', validateMiddleware.validate(validateMiddleware.schemas.selectNumber), authMiddleware.checkoutActiveSession, GameController.joinSession)
 
-router.post('/session/leave', GameController.leaveSession);
+gameRouter.post('/session/leave', GameController.leaveSession);
 
-router.get('/session/user', GameController.getUserSession);
+gameRouter.get('/session/user', GameController.getUserSession);
 
-router.get('/leaderboard', GameController.getTopPlayers);
+gameRouter.get('/leaderboard', GameController.getTopPlayers);
 
-router.get('/sessions/date/:date', GameController.getSessionsByDate);
+gameRouter.get('/sessions/date/:date', GameController.getSessionsByDate);
 
-router.get('/sessions/recent', GameController.getRecentSessions);
+gameRouter.get('/sessions/recent', GameController.getRecentSessions);
 
-router.get('/sessions/:sessionId', GameController.getSessionDetails);
+gameRouter.get('/sessions/:sessionId', GameController.getSessionDetails);
 
 export default gameRouter; 

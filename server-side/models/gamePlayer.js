@@ -1,4 +1,4 @@
-import db from '../config/database.js';
+import db from '../config/databaseConfig.js';
 import logger from '../utils/logger.js';
 
 class PlayerSession {

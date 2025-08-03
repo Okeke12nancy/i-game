@@ -5,20 +5,22 @@ import express from 'express';
 import db from './config/databaseConfig.js';
 import logger from './utils/logger.js';
 import { createServer } from 'http';
-import socketIO from 'socket.io';
+import { Server } from 'socket.io';
+// import socketIo from 'socket.io';
 import authRouter from './routes/authRoutes.js';
 import gameRouter from './routes/gameRoutes.js';
+import gameService from './service/gameService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 dotenv.config({ path: join(__dirname, '.env') });
 
-class Server {
+class startUpServer {
     constructor(){
         this.app = express()
         this.server = createServer(this.app);
-        this.io = socketIO(this.server, {
+        this.io = new Server(this.server, {
             cors:{
                 origin: process.env.CLIENT_URL || "http://localhost:3000",
                 methods: ["GET", "POST"]
@@ -54,7 +56,7 @@ class Server {
         });
 
         this.app.use('/api/auth', authRouter);
-        this.app.use('./api/auth', gameRouter)
+        this.app.use('/api/game', gameRouter)
 
         this.app.use('*', (req, res) => {
             res.status(404).json({
@@ -75,7 +77,7 @@ class Server {
         });
     }
 
-     setupSocketIO() {
+    setupSocketIO() {
     this.io.on('connection', (socket) => {
       logger.info('Client connected:', socket.id);
 
@@ -109,22 +111,43 @@ class Server {
     global.io = this.io;
   } 
 
-    async initialize(){
-        try {
-            await db.connect()
-            logger.info('Database successfully connected')
+    // async initialize(){
+    //     try {
+    //         await db.connect()
+    //         logger.info('Database successfully connected')
             
-            this.setupMiddleware();
+    //         this.setupMiddleware();
+    //         this.setupRoutes();
+    //         this.setupErrorHandling();
+    //         this.setupSocketIO();
+            
+    //         logger.info('Server Connected Successfully')
+    //     } catch (error){
+    //         logger.error("Server initialization failed", error)
+    //         process.exit(1)
+    //     }
+    // }
+     async initialize() {
+    try {
+
+      await db.connect();
+      logger.info('Database connected successfully');
+
+    //   await GameService.initialize();
+    await gameService.initialize()
+      logger.info('Game service initialized');
+
+           this.setupMiddleware();
             this.setupRoutes();
             this.setupErrorHandling();
             this.setupSocketIO();
-            
-            logger.info('Server Connected Successfully')
-        } catch (error){
-            logger.error("Server initialization failed", error)
-            process.exit(1)
-        }
+
+      logger.info('Server initialized successfully');
+    } catch (error) {
+      logger.error('Server initialization failed:', error);
+      process.exit(1);
     }
+  }
     
     start(){
         this.server.listen(this.port, ()=>{
@@ -150,7 +173,7 @@ class Server {
     }
 }
 
-const server = new Server();
+const server = new startUpServer();
 
 process.on('SIGTERM', () => server.disconnect());
 process.on('SIGINT', () => server.disconnect());

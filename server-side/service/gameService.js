@@ -1,7 +1,7 @@
-import GameSession from "../models/game";
-import PlayerSession from "../models/gamePlayer";
-import User from '../models/UserModel';
-import logger from '../utils/logger';
+import GameSession from "../models/game.js";
+import PlayerSession from "../models/gamePlayer.js";
+import User from '../models/UserModel.js';
+import logger from '../utils/logger.js';
 
 class GameService{
     constructor(){
@@ -134,7 +134,7 @@ async updateUserStats(sessionId){
     try{
         const participants = await PlayerSession.getSessionParticipants(sessionId);
 
-        for (const participants of participants){
+        for (const participant of participants){
             const user = await User.findById(participants.userId);
             if(user){
                 await user.updateStats(participants.is_winner)

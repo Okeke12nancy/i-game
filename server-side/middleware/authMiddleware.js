@@ -4,7 +4,7 @@ import logger from '../utils/logger.js';
 import PlayerSession from '../models/gamePlayer.js'
 
 class AuthMiddleware{
-    async authMiddleware(req, res, next){
+    async authMiddlewares(req, res, next){
         try{
             const authHeader = req.headers['authorization'];
             const token = authHeader && authHeader.split(' ')[1];
