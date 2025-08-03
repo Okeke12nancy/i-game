@@ -157,4 +157,4 @@ async getSessionWinners(sessionId) {
   }
 }
 
-export default PlayerSession; 
+export default new PlayerSession; 

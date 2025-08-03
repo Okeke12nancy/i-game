@@ -145,4 +145,4 @@ async getParticipants() {
   }
 }
 
-export default GameSession; 
+export default new GameSession; 

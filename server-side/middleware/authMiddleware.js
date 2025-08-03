@@ -1,9 +1,10 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/UserModel.js';
 import logger from '../utils/logger.js';
+import PlayerSession from '../models/gamePlayer.js'
 
 class AuthMiddleware{
-    static async authMiddleware(req, res, next){
+    async authMiddleware(req, res, next){
         try{
             const authHeader = req.headers['authorization'];
             const token = authHeader && authHeader.split(' ')[1];
@@ -52,13 +53,33 @@ class AuthMiddleware{
         }
     }
 
-    static generateToken(userId) {
+    generateToken(userId) {
         return jwt.sign(
             { userId },
             process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+            { expiresIn: process.env.JWT_EXPIRES_IN || '48h' }
         );
+    }
+
+    async checkoutActiveSession(req,res,next){
+        try{
+            const activeSession = await PlayerSession.getUserActiveSession(req.user.id);
+
+            if(activeSession){
+                return res.status(400).json({
+                    success:false,
+                    message: 'User already has an active session'
+                });
+            }
+            next();
+        }catch (error){
+            logger.error('Check active session error:', error);
+            return res.status(500).json({
+                success:false,
+                message: 'Falied to check active session'
+            });
+        }
     }
 }
 
-export default AuthMiddleware;
+export default new AuthMiddleware;
