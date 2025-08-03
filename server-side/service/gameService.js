@@ -9,7 +9,7 @@ class GameService{
         this.sessionTimer = null;
         this.sessionDuration = parseInt(process.env.SESSION_DURATION) || 20000;
         this.sessionInterval = parseInt(process.env.SESSION_INTERVAL) || 30000;
-        this.maxPlayers = parseInt(process_params.env.MAX_PLAYERS_PER_SESSION) || 10;
+        this.maxPlayers = parseInt(process.env.MAX_PLAYERS_PER_SESSION) || 10;
     }
     async initialize(){
         try{
@@ -17,7 +17,7 @@ class GameService{
 
             if(this.activeSession){
                 logger.info('Found existing active session:', this.activeSession.id);
-                this.startSessionTier();
+                this.startSessionTimer();
             }else {
                 this.scheduleNextSession();
             }
@@ -89,7 +89,7 @@ class GameService{
         }
         const removed = await PlayerSession.removeFromSession(userId, this.activeSession.id);
         if(removed){
-            logger.info(`User ${userId} lrft session ${this.activeSession.id}`);
+            logger.info(`User ${userId} left session ${this.activeSession.id}`);
         }
         return removed;
     } catch (error){
@@ -101,7 +101,7 @@ class GameService{
   async completeSession(){
     try{
         if(!this.activeSession){
-            logger.warn('No active session to compete');
+            logger.warn('No active session to complete');
             return;
         }
 

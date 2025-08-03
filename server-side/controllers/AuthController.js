@@ -80,6 +80,26 @@ class AuthController{
             });
         }
     }
+
+    async getProfile(req, res) {
+    try {
+      const user = req.user;
+
+      res.json({
+        success: true,
+        data: {
+          user: user.toJSON()
+        }
+      });
+    } catch (error) {
+      logger.error('Get profile error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get profile',
+        error: error.message
+      });
+    }
+  }
 }
 
 export default AuthController;

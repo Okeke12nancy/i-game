@@ -8,4 +8,9 @@ authRouter.post('/register', ValidationMiddleware.validate(ValidationMiddleware.
 
 authRouter.post('/login', ValidationMiddleware.validate(ValidationMiddleware.schemas.login), AuthController.login);
 
+router.get('/profile', 
+  AuthMiddleware.authenticateToken,
+  AuthController.getProfile
+);
+
 export default authRouter;
