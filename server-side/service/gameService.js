@@ -67,7 +67,6 @@ class GameService{
         throw new Error('Session is full');
       }
 
-      // Check if user is already in this session
       const existingPlayer = await PlayerSession.findByUserAndSession(userId, this.activeSession.id);
       if (existingPlayer) {
         throw new Error('User already in session');
@@ -165,7 +164,6 @@ startSessionTimer() {
   scheduleNextSession() {
     setTimeout(async () => {
       try {
-        // Create new session (created by system)
         const newSession = await this.createNewSession(1); // System user ID
         await this.activateSession(newSession.id);
       } catch (error) {

@@ -71,7 +71,6 @@ async function setupDatabase() {
         await db.connect();
         logger.info('Database connected successfully');
 
-        // Create tables
         logger.info('Creating tables...');
         
         const createUsersTable = `
@@ -121,7 +120,6 @@ async function setupDatabase() {
         await db.query(createPlayerSessionsTable);
         logger.info('Player sessions table created successfully');
 
-        // Create indexes
         logger.info('Creating indexes...');
 
         await db.query(`
