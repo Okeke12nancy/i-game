@@ -5,7 +5,7 @@ import express from 'express';
 import db from './config/databaseConfig.js';
 import logger from './utils/logger.js';
 import { createServer } from 'http';
-
+import socketIO from 'socket.io';
 import authRouter from './routes/authRoutes.js';
 import gameRouter from './routes/gameRoutes.js';
 
@@ -17,7 +17,13 @@ dotenv.config({ path: join(__dirname, '.env') });
 class Server {
     constructor(){
         this.app = express()
-        this.server = createServer(this.app)
+        this.server = createServer(this.app);
+        this.io = socketIO(this.server, {
+            cors:{
+                origin: process.env.CLIENT_URL || "http://localhost:3000",
+                methods: ["GET", "POST"]
+            }
+        })
         this.port = process.env.PORT || 3000
     }
 
@@ -69,14 +75,49 @@ class Server {
         });
     }
 
+     setupSocketIO() {
+    this.io.on('connection', (socket) => {
+      logger.info('Client connected:', socket.id);
+
+      socket.on('authenticate', (token) => {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          socket.userId = decoded.userId;
+          socket.join(`user_${decoded.userId}`);
+          logger.info('Socket authenticated for user:', decoded.userId);
+        } catch (error) {
+          logger.error('Socket authentication failed:', error);
+          socket.emit('auth_error', { message: 'Authentication failed' });
+        }
+      });
+
+      socket.on('join_game_room', () => {
+        socket.join('game_room');
+        logger.info('Client joined game room:', socket.id);
+      });
+
+      socket.on('leave_game_room', () => {
+        socket.leave('game_room');
+        logger.info('Client left game room:', socket.id);
+      });
+
+      socket.on('disconnect', () => {
+        logger.info('Client disconnected:', socket.id);
+      });
+    });
+
+    global.io = this.io;
+  } 
+
     async initialize(){
         try {
             await db.connect()
             logger.info('Database successfully connected')
             
-            this.setupMiddleware()
-            this.setupRoutes()
-            this.setupErrorHandling()
+            this.setupMiddleware();
+            this.setupRoutes();
+            this.setupErrorHandling();
+            this.setupSocketIO();
             
             logger.info('Server Connected Successfully')
         } catch (error){
