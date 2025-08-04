@@ -1,26 +1,31 @@
-import GameService from '../service/gameService.js';
-import GameSession from '../models/game.js';
-import PlayerSession from '../models/gamePlayer.js';
-import User from '../models/UserModel.js';
-import logger from '../utils/logger.js';
+import GameService from "../service/gameService.js";
+import GameSession from "../models/game.js";
+import PlayerSession from "../models/gamePlayer.js";
+import User from "../models/UserModel.js";
+import logger from "../utils/logger.js";
+import gameService from "../service/gameService.js";
 
 class GameController {
   async getActiveSession(req, res) {
     try {
-      const sessionInfo = GameService.getSessionInfo();
-      
+      const sessionInfo = await GameService.getSessionInfo();
+
       if (!sessionInfo) {
         return res.json({
           success: true,
           data: {
             activeSession: null,
-            message: 'No active session'
-          }
+            message: "No active session",
+          },
         });
       }
 
-      const playerCount = await PlayerSession.getSessionPlayerCount(sessionInfo.id);
-      const participants = await GameService.getSessionParticipants(sessionInfo.id);
+      const playerCount = await PlayerSession.getSessionPlayerCount(
+        sessionInfo.id
+      );
+      const participants = await GameService.getSessionParticipants(
+        sessionInfo.id
+      );
 
       res.json({
         success: true,
@@ -28,21 +33,56 @@ class GameController {
           activeSession: {
             ...sessionInfo,
             playerCount,
-            participants: participants.map(p => ({
+            participants: participants.map((p) => ({
               id: p.user_id,
               username: p.username,
               selectedNumber: p.selected_number,
-              isWinner: p.is_winner
-            }))
-          }
-        }
+              isWinner: p.is_winner,
+            })),
+          },
+        },
       });
     } catch (error) {
-      logger.error('Get active session error:', error);
+      logger.error("Get active session error:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get active session',
-        error: error.message
+        message: "Failed to get active session",
+        error: error.message,
+      });
+    }
+  }
+
+  async createSession(req, res) {
+    try {
+      const userId = req?.userId;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "User does not exist",
+          data: null,
+        });
+      }
+      const result = await gameService.createSession(userId);
+
+      if (result.alreadyActive) {
+        return res.status(200).json({
+          success: true,
+          message: "There is already an active session",
+          data: { activeSession: result.session },
+        });
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: "Game session created successfully",
+        data: { activeSession: result.session },
+      });
+    } catch (error) {
+      console.error("Error creating session:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to create game session",
+        error: error.message,
       });
     }
   }
@@ -52,20 +92,23 @@ class GameController {
       const { selectedNumber } = req.body;
       const userId = req.user.id;
 
-      const playerSession = await GameService.joinSession(userId, selectedNumber);
+      const playerSession = await GameService.joinSession(
+        userId,
+        selectedNumber
+      );
 
       res.json({
         success: true,
-        message: 'Successfully joined session',
+        message: "Successfully joined session",
         data: {
-          playerSession: playerSession.toJSON()
-        }
+          playerSession: playerSession.toJSON(),
+        },
       });
     } catch (error) {
-      logger.error('Join session error:', error);
+      logger.error("Join session error:", error);
       res.status(400).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
   }
@@ -78,20 +121,20 @@ class GameController {
       if (removed) {
         res.json({
           success: true,
-          message: 'Successfully left session'
+          message: "Successfully left session",
         });
       } else {
         res.status(404).json({
           success: false,
-          message: 'Not found in any active session'
+          message: "Not found in any active session",
         });
       }
     } catch (error) {
-      logger.error('Leave session error:', error);
+      logger.error("Leave session error:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to leave session',
-        error: error.message
+        message: "Failed to leave session",
+        error: error.message,
       });
     }
   }
@@ -106,13 +149,15 @@ class GameController {
           success: true,
           data: {
             userSession: null,
-            message: 'No active session'
-          }
+            message: "No active session",
+          },
         });
       }
 
       const session = await GameSession.findById(activeSession.session_id);
-      const participants = await GameService.getSessionParticipants(activeSession.session_id);
+      const participants = await GameService.getSessionParticipants(
+        activeSession.session_id
+      );
 
       res.json({
         success: true,
@@ -120,21 +165,21 @@ class GameController {
           userSession: {
             ...activeSession.toJSON(),
             session: session.toJSON(),
-            participants: participants.map(p => ({
+            participants: participants.map((p) => ({
               id: p.user_id,
               username: p.username,
               selectedNumber: p.selected_number,
-              isWinner: p.is_winner
-            }))
-          }
-        }
+              isWinner: p.is_winner,
+            })),
+          },
+        },
       });
     } catch (error) {
-      logger.error('Get user session error:', error);
+      logger.error("Get user session error:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get user session',
-        error: error.message
+        message: "Failed to get user session",
+        error: error.message,
       });
     }
   }
@@ -147,15 +192,15 @@ class GameController {
       res.json({
         success: true,
         data: {
-          players: players.map(player => player.toJSON())
-        }
+          players: players.map((player) => player.toJSON()),
+        },
       });
     } catch (error) {
-      logger.error('Get top players error:', error);
+      logger.error("Get top players error:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get top players',
-        error: error.message
+        message: "Failed to get top players",
+        error: error.message,
       });
     }
   }
@@ -167,24 +212,26 @@ class GameController {
 
       const sessionsWithDetails = await Promise.all(
         sessions.map(async (session) => {
-          const participants = await GameService.getSessionParticipants(session.id);
+          const participants = await GameService.getSessionParticipants(
+            session.id
+          );
           const winners = await GameService.getSessionWinners(session.id);
-          
+
           return {
             ...session.toJSON(),
             participantCount: participants.length,
             winnerCount: winners.length,
-            participants: participants.map(p => ({
+            participants: participants.map((p) => ({
               id: p.user_id,
               username: p.username,
               selectedNumber: p.selected_number,
-              isWinner: p.is_winner
+              isWinner: p.is_winner,
             })),
-            winners: winners.map(w => ({
+            winners: winners.map((w) => ({
               id: w.user_id,
               username: w.username,
-              selectedNumber: w.selected_number
-            }))
+              selectedNumber: w.selected_number,
+            })),
           };
         })
       );
@@ -193,15 +240,15 @@ class GameController {
         success: true,
         data: {
           date,
-          sessions: sessionsWithDetails
-        }
+          sessions: sessionsWithDetails,
+        },
       });
     } catch (error) {
-      logger.error('Get sessions by date error:', error);
+      logger.error("Get sessions by date error:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get sessions by date',
-        error: error.message
+        message: "Failed to get sessions by date",
+        error: error.message,
       });
     }
   }
@@ -213,24 +260,26 @@ class GameController {
 
       const sessionsWithDetails = await Promise.all(
         sessions.map(async (session) => {
-          const participants = await GameService.getSessionParticipants(session.id);
+          const participants = await GameService.getSessionParticipants(
+            session.id
+          );
           const winners = await GameService.getSessionWinners(session.id);
-          
+
           return {
             ...session.toJSON(),
             participantCount: participants.length,
             winnerCount: winners.length,
-            participants: participants.map(p => ({
+            participants: participants.map((p) => ({
               id: p.user_id,
               username: p.username,
               selectedNumber: p.selected_number,
-              isWinner: p.is_winner
+              isWinner: p.is_winner,
             })),
-            winners: winners.map(w => ({
+            winners: winners.map((w) => ({
               id: w.user_id,
               username: w.username,
-              selectedNumber: w.selected_number
-            }))
+              selectedNumber: w.selected_number,
+            })),
           };
         })
       );
@@ -238,15 +287,15 @@ class GameController {
       res.json({
         success: true,
         data: {
-          sessions: sessionsWithDetails
-        }
+          sessions: sessionsWithDetails,
+        },
       });
     } catch (error) {
-      logger.error('Get recent sessions error:', error);
+      logger.error("Get recent sessions error:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get recent sessions',
-        error: error.message
+        message: "Failed to get recent sessions",
+        error: error.message,
       });
     }
   }
@@ -259,7 +308,7 @@ class GameController {
       if (!session) {
         return res.status(404).json({
           success: false,
-          message: 'Session not found'
+          message: "Session not found",
         });
       }
 
@@ -273,29 +322,29 @@ class GameController {
             ...session.toJSON(),
             participantCount: participants.length,
             winnerCount: winners.length,
-            participants: participants.map(p => ({
+            participants: participants.map((p) => ({
               id: p.user_id,
               username: p.username,
               selectedNumber: p.selected_number,
-              isWinner: p.is_winner
+              isWinner: p.is_winner,
             })),
-            winners: winners.map(w => ({
+            winners: winners.map((w) => ({
               id: w.user_id,
               username: w.username,
-              selectedNumber: w.selected_number
-            }))
-          }
-        }
+              selectedNumber: w.selected_number,
+            })),
+          },
+        },
       });
     } catch (error) {
-      logger.error('Get session details error:', error);
+      logger.error("Get session details error:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get session details',
-        error: error.message
+        message: "Failed to get session details",
+        error: error.message,
       });
     }
   }
 }
 
-export default new GameController; 
+export default new GameController();
