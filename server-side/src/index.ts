@@ -11,9 +11,9 @@ import gameRouter from "./routes/gameRoutes.js";
 import gameService from "./service/gameService.js";
 import session from "express-session";
 import { AuthenticatedSocket } from "./types/index.js";
-import db from "./config/databaseConfig.js"; 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+import "./config/supabaseConfig.js";
 
 dotenv.config({ path: join(__dirname, "../../.env") });
 
@@ -33,7 +33,7 @@ class StartUpServer {
     this.server = createServer(this.app);
     this.io = new Server(this.server, {
       cors: {
-        origin: "http://localhost:3001",
+        origin: process.env.CLIENT_URL,
         methods: ["GET", "POST"],
       },
     });
@@ -129,15 +129,9 @@ class StartUpServer {
   }
 
   async initialize(): Promise<void> {
-    logger.info('DB Conneccccccction Info:', {
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT,
-      database: process.env.DB_NAME,
-      user: process.env.DB_USER,
-    });
+    
     
     try {
-      await db.connect();
       logger.info("Database connected successfully");
 
       this.setupMiddleware();
@@ -163,7 +157,6 @@ class StartUpServer {
     logger.info("Server disconnecting...");
 
     try {
-      // await db.close();
       this.server.close(() => {
         logger.info("Server Closed");
         process.exit(0);
