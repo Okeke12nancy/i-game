@@ -127,8 +127,25 @@ class GameService {
 
   async leaveSession(userId) {
     try {
-      if (!this.activeSession) throw new Error("No active session");
+      // First, check if user has an active player session
+      const userSession = await PlayerSession.getUserActiveSession(userId);
+      
+      if (!userSession) {
+        // User is not in any session, return success
+        return true;
+      }
 
+      // If there's no active session in GameService but user has a session record,
+      // it means the session has ended. Just remove the user's session record.
+      if (!this.activeSession) {
+        const removed = await PlayerSession.removeFromSession(userId, userSession.session_id);
+        if (removed) {
+          logger.info(`User ${userId} removed from completed session ${userSession.session_id}`);
+        }
+        return removed;
+      }
+
+      // Normal case: active session exists
       const removed = await PlayerSession.removeFromSession(
         userId,
         this.activeSession.id

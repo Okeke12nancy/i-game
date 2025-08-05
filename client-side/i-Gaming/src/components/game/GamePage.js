@@ -50,6 +50,26 @@ const GamePage = () => {
     return () => clearInterval(interval);
   }, [timeRemaining, gameEnded]);
 
+  // Check if session is still active every 10 seconds
+  useEffect(() => {
+    if (gameEnded) return; // Don't check if game has already ended
+
+    const sessionCheckInterval = setInterval(async () => {
+      try {
+        const response = await api.getActiveSession();
+        if (!response.success || !response.data.activeSession) {
+          // Session is no longer active, redirect to home
+          toast.info("Session has ended. Redirecting to lobby...");
+          navigate("/");
+        }
+      } catch (error) {
+        console.warn("Error checking session status:", error);
+      }
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(sessionCheckInterval);
+  }, [gameEnded, navigate]);
+
   const loadSessionData = async () => {
     try {
       const [activeResponse, userResponse] = await Promise.all([
@@ -60,6 +80,11 @@ const GamePage = () => {
       if (activeResponse.success && activeResponse.data.activeSession) {
         setActiveSession(activeResponse.data.activeSession);
         setTimeRemaining(activeResponse.data.activeSession.timeRemaining || 0);
+      } else {
+        // No active session, redirect to home page
+        toast.info("No active session found. Redirecting to lobby...");
+        navigate("/");
+        return;
       }
 
       if (userResponse.success && userResponse.data.userSession) {
@@ -69,6 +94,8 @@ const GamePage = () => {
     } catch (error) {
       console.error("Error loading session data:", error);
       toast.error("Failed to load session data");
+      // On error, redirect to home page
+      navigate("/");
     }
   };
 
@@ -77,20 +104,20 @@ const GamePage = () => {
     setTimeRemaining(0);
     setGameResult(data);
     toast.success(`Session ended! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
-    // Redirect to homepage after a longer delay to show the results
+    // Redirect to homepage after showing results briefly
     setTimeout(() => {
       navigate("/");
-    }, 5000);
+    }, 3000);
   };
 
   const handleGameResult = (data) => {
     setGameResult(data);
     setGameEnded(true);
     toast.success(`Game results are in! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
-    // Redirect to homepage after a longer delay to show the results
+    // Redirect to homepage after showing results briefly
     setTimeout(() => {
       navigate("/");
-    }, 5000);
+    }, 3000);
   };
 
   const handleCountdownUpdate = (data) => {
@@ -130,18 +157,19 @@ const GamePage = () => {
   };
 
   const handleLeaveSession = async () => {
-    if (!userSession) {
-      navigate("/");
-      return;
-    }
-
     setLoading(true);
     try {
+      // Always try to leave session, even if userSession is null
+      // This handles the case where session has ended but user is still on the page
       await api.leaveSession();
       toast.success("Left the session");
       navigate("/");
     } catch (error) {
-      toast.error("Failed to leave session");
+      // If there's an error, just redirect to home page
+      // This handles cases where session has already ended
+      console.warn("Error leaving session:", error);
+      toast.info("Redirecting to lobby...");
+      navigate("/");
     } finally {
       setLoading(false);
     }
