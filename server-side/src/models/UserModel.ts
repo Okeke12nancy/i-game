@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import logger from '../utils/logger.js';
 import { User as UserType, UserWithoutPassword } from '../types/index.js';
-import { supabase } from '../config/supabaseConfig.js';
+import { supabase } from '../config/supabaseConfig';
 
 class User implements UserType {
   id: number;
