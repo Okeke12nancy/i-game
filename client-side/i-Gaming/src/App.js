@@ -8,6 +8,7 @@ import RegisterForm from './components/auth/RegisterForm';
 import HomePage from './components/game/HomePage';
 import GamePage from './components/game/GamePage';
 import LeaderboardPage from './components/game/LeaderboardPage';
+import SessionSummaryPage from './components/game/SessionSummaryPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -91,6 +92,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <LeaderboardPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/session-summary" 
+            element={
+              <ProtectedRoute>
+                <SessionSummaryPage />
               </ProtectedRoute>
             } 
           />

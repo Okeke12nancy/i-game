@@ -60,7 +60,7 @@ const GamePage = () => {
         if (!response.success || !response.data.activeSession) {
           // Session is no longer active, redirect to home
           toast.info("Session has ended. Redirecting to lobby...");
-          navigate("/");
+          navigate("/session-summary");
         }
       } catch (error) {
         console.warn("Error checking session status:", error);
@@ -104,9 +104,19 @@ const GamePage = () => {
     setTimeRemaining(0);
     setGameResult(data);
     toast.success(`Session ended! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
-    // Redirect to homepage after showing results briefly
+    // Redirect to session summary page after showing results briefly
     setTimeout(() => {
-      navigate("/");
+      navigate("/session-summary", { 
+        state: { 
+          sessionData: {
+            winningNumber: data.winningNumber,
+            participantCount: data.participantCount,
+            winnerCount: data.winners?.length || 0,
+            participants: data.participants || [],
+            winners: data.winners || [],
+          }
+        } 
+      });
     }, 3000);
   };
 
@@ -114,9 +124,19 @@ const GamePage = () => {
     setGameResult(data);
     setGameEnded(true);
     toast.success(`Game results are in! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
-    // Redirect to homepage after showing results briefly
+    // Redirect to session summary page after showing results briefly
     setTimeout(() => {
-      navigate("/");
+      navigate("/session-summary", { 
+        state: { 
+          sessionData: {
+            winningNumber: data.winningNumber,
+            participantCount: data.participantCount,
+            winnerCount: data.winners?.length || 0,
+            participants: data.participants || [],
+            winners: data.winners || [],
+          }
+        } 
+      });
     }, 3000);
   };
 

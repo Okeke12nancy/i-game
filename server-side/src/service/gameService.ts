@@ -1,0 +1,368 @@
+import GameSession from "../models/game.js";
+import PlayerSession from "../models/gamePlayer.js";
+import User from "../models/UserModel.js";
+import logger from "../utils/logger.js";
+import { GameServiceInterface, SessionInfo, SessionResult, Participant, Winner } from "../types/index.js";
+
+class GameService implements GameServiceInterface {
+  public activeSession: any = null;
+  public sessionTimer: NodeJS.Timeout | null = null;
+  public sessionDuration: number;
+  public sessionInterval: number;
+  public maxPlayers: number;
+
+  constructor() {
+    this.activeSession = null;
+    this.sessionTimer = null;
+    this.sessionDuration = parseInt(process.env.SESSION_DURATION || '30000');
+    this.sessionInterval = parseInt(process.env.SESSION_INTERVAL || '30000');
+    this.maxPlayers = parseInt(process.env.MAX_PLAYERS_PER_SESSION || '10');
+  }
+
+  async createSession(userId: number): Promise<{ alreadyActive: boolean; session: SessionInfo | null }> {
+    try {
+      this.activeSession = await GameSession.findActive();
+
+      if (this.activeSession) {
+        const timeRemaining = this.calculateTimeRemaining();
+
+        if (timeRemaining <= 0) {
+          logger.warn(
+            `Found expired active session ${this.activeSession.id}, completing it now...`
+          );
+          await this.completeSession();
+        } else {
+          logger.info(
+            `Found existing active session: ${this.activeSession.id}`
+          );
+          return { alreadyActive: true, session: await this.getSessionInfo() };
+        }
+      }
+
+      const newSession = await this.createNewSession(userId);
+      await this.activateSession(newSession.id);
+      return { alreadyActive: false, session: await this.getSessionInfo() };
+    } catch (error) {
+      logger.error("Error creating a new session:", error);
+      throw error;
+    }
+  }
+
+  async createNewSession(createdBy: number): Promise<any> {
+    try {
+      const session = await GameSession.create(createdBy);
+      logger.info("Created new game session:", session.id);
+      return session;
+    } catch (error) {
+      logger.error("Error creating new session:", error);
+      throw error;
+    }
+  }
+
+  async activateSession(sessionId: number): Promise<any> {
+    try {
+      const session = await GameSession.findById(sessionId);
+      if (!session) throw new Error("Session not found");
+
+      await session.activate();
+      this.activeSession = session;
+      this.startSessionTimer();
+
+      // Emit session started event
+      if (global.io) {
+        global.io.to("game_room").emit("session_started", {
+          sessionId: sessionId,
+          timeRemaining: this.sessionDuration / 1000,
+          message: "New session started"
+        });
+      }
+
+      logger.info("Activated session:", sessionId);
+      return session;
+    } catch (error) {
+      logger.error("Error activating session:", error);
+      throw error;
+    }
+  }
+
+  async joinSession(userId: number, selectedNumber: number): Promise<any> {
+    try {
+      if (!this.activeSession || this.activeSession.status !== "active") {
+        throw new Error("No active session available");
+      }
+
+      const playerCount = await PlayerSession.getSessionPlayerCount(
+        this.activeSession.id
+      );
+      if (playerCount >= this.maxPlayers) throw new Error("Session is full");
+
+      const existingPlayer = await PlayerSession.findByUserAndSession(
+        userId,
+        this.activeSession.id
+      );
+      if (existingPlayer) throw new Error("User already in session");
+
+      const playerSession = await PlayerSession.create(
+        userId,
+        this.activeSession.id,
+        selectedNumber
+      );
+      
+      // Get user info for socket emission
+      const user = await User.findById(userId);
+      
+      // Emit player joined event
+      if (global.io && user) {
+        global.io.to("game_room").emit("player_joined", {
+          sessionId: this.activeSession.id,
+          userId: userId,
+          username: user.username,
+          selectedNumber: selectedNumber
+        });
+      }
+      
+      logger.info(
+        `User ${userId} joined session ${this.activeSession.id} with number ${selectedNumber}`
+      );
+
+      return playerSession;
+    } catch (error) {
+      logger.error("Error joining session:", error);
+      throw error;
+    }
+  }
+
+  async leaveSession(userId: number): Promise<boolean> {
+    try {
+      // First, check if user has an active player session
+      const userSession = await PlayerSession.getUserActiveSession(userId);
+      
+      if (!userSession) {
+        // User is not in any session, return success
+        return true;
+      }
+
+      // If there's no active session in GameService but user has a session record,
+      // it means the session has ended. Just remove the user's session record.
+      if (!this.activeSession) {
+        const removed = await PlayerSession.removeFromSession(userId, userSession.session_id);
+        if (removed) {
+          logger.info(`User ${userId} removed from completed session ${userSession.session_id}`);
+        }
+        return removed;
+      }
+
+      // Normal case: active session exists
+      const removed = await PlayerSession.removeFromSession(
+        userId,
+        this.activeSession.id
+      );
+      
+      if (removed) {
+        // Get user info for socket emission
+        const user = await User.findById(userId);
+        
+        // Emit player left event
+        if (global.io && user) {
+          global.io.to("game_room").emit("player_left", {
+            sessionId: this.activeSession.id,
+            userId: userId,
+            username: user.username
+          });
+        }
+        
+        logger.info(`User ${userId} left session ${this.activeSession.id}`);
+      }
+
+      return removed;
+    } catch (error) {
+      logger.error("Error leaving session:", error);
+      throw error;
+    }
+  }
+
+  async completeSession(): Promise<SessionResult | undefined> {
+    try {
+      if (!this.activeSession || this.activeSession.status === "completed") {
+        logger.warn("No active session to complete or already completed");
+        return;
+      }
+
+      const sessionId = this.activeSession.id;
+
+      const winningNumber = Math.floor(Math.random() * 9) + 1;
+
+      await PlayerSession.markWinners(sessionId, winningNumber);
+
+      await this.activeSession.complete(winningNumber);
+
+      await this.updateUserStats(sessionId);
+
+      const participants = await PlayerSession.getSessionParticipants(sessionId);
+      const winners = await PlayerSession.getSessionWinners(sessionId);
+
+      logger.info(
+        `Completed session ${sessionId} with winning number ${winningNumber}`
+      );
+
+      // Emit socket events to notify clients
+      if (global.io) {
+        global.io.to("game_room").emit("session_ended", {
+          sessionId,
+          winningNumber,
+          participantCount: participants.length,
+          message: "Session ended"
+        });
+
+        global.io.to("game_room").emit("game_result", {
+          sessionId,
+          winningNumber,
+          participantCount: participants.length,
+          participants: participants.map((p: any) => ({
+            id: p.user_id,
+            username: p.username,
+            selectedNumber: p.selected_number,
+            isWinner: p.is_winner,
+          })),
+          winners: winners.map((w: any) => ({
+            id: w.user_id,
+            username: w.username,
+            selectedNumber: w.selected_number,
+          })),
+        });
+      }
+
+      this.activeSession = null;
+
+      // Schedule next session automatically
+      // this.scheduleNextSession();
+
+      return {
+        sessionId,
+        winningNumber,
+        participants,
+        winners,
+      };
+    } catch (error) {
+      logger.error("Error completing session:", error);
+      throw error;
+    }
+  }
+
+  async updateUserStats(sessionId: number): Promise<void> {
+    try {
+      const participants = await PlayerSession.getSessionParticipants(
+        sessionId
+      );
+
+      for (const participant of participants) {
+        const user = await User.findById(participant.user_id);
+        if (user) await user.updateStats(participant.is_winner);
+      }
+
+      logger.info(`Updated stats for ${participants.length} participants`);
+    } catch (error) {
+      logger.error("Error updating user stats:", error);
+      throw error;
+    }
+  }
+
+  startSessionTimer(): void {
+    if (this.sessionTimer) clearTimeout(this.sessionTimer);
+
+    // Start countdown updates
+    const countdownInterval = setInterval(() => {
+      const timeRemaining = this.calculateTimeRemaining();
+      
+      if (timeRemaining <= 0) {
+        clearInterval(countdownInterval);
+        return;
+      }
+      
+      // Emit countdown update
+      if (global.io) {
+        global.io.to("game_room").emit("countdown_update", {
+          timeRemaining: timeRemaining
+        });
+      }
+    }, 1000);
+
+    this.sessionTimer = setTimeout(async () => {
+      try {
+        clearInterval(countdownInterval);
+        await this.completeSession();
+      } catch (error) {
+        logger.error("Error in session timer:", error);
+      }
+    }, this.sessionDuration);
+  }
+
+  async getSessionInfo(): Promise<SessionInfo | null> {
+    if (!this.activeSession) {
+      return null;
+    }
+
+    const timeRemaining = this.calculateTimeRemaining();
+
+    if (timeRemaining <= 0 && this.activeSession.status === "active") {
+      await this.completeSession();
+      return null;
+    }
+
+    const playerCount = await PlayerSession.getSessionPlayerCount(
+      this.activeSession.id
+    );
+    const participants = await PlayerSession.getSessionParticipants(
+      this.activeSession.id
+    );
+
+    const creator = await User.findById(this.activeSession.created_by);
+
+    return {
+      id: this.activeSession.id,
+      status: this.activeSession.status,
+      startTime: this.activeSession.start_time,
+      timeRemaining,
+      maxPlayers: this.maxPlayers,
+      playerCount,
+      participants,
+      createdBy: creator
+        ? { id: creator.id, username: creator.username }
+        : null,
+    };
+  }
+
+  calculateTimeRemaining(): number {
+    if (!this.activeSession || !this.activeSession.start_time) return 0;
+
+    const startTime = new Date(this.activeSession.start_time).getTime();
+    const elapsed = Date.now() - startTime;
+    const remaining = this.sessionDuration - elapsed;
+
+    return Math.max(0, Math.floor(remaining / 1000));
+  }
+
+  async getSessionParticipants(sessionId: number): Promise<Participant[]> {
+    try {
+      return await PlayerSession.getSessionParticipants(sessionId);
+    } catch (error) {
+      logger.error("Error getting session participants:", error);
+      throw error;
+    }
+  }
+
+  async getSessionWinners(sessionId: number): Promise<Winner[]> {
+    try {
+      return await PlayerSession.getSessionWinners(sessionId);
+    } catch (error) {
+      logger.error("Error getting session winners:", error);
+      throw error;
+    }
+  }
+
+  getActiveSession(): any {
+    return this.activeSession;
+  }
+}
+
+export default new GameService(); 

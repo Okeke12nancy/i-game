@@ -1,0 +1,1 @@
+{"version":3,"file":"preventLogoutIfInSession.d.ts","sourceRoot":"","sources":["../../src/middleware/preventLogoutIfInSession.ts"],"names":[],"mappings":"AAAA,OAAO,EAAW,QAAQ,EAAE,YAAY,EAAE,MAAM,SAAS,CAAC;AAG1D,OAAO,EAAE,oBAAoB,EAAE,MAAM,mBAAmB,CAAC;AAEzD,QAAA,MAAM,wBAAwB,GAAU,KAAK,oBAAoB,EAAE,KAAK,QAAQ,EAAE,MAAM,YAAY,KAAG,OAAO,CAAC,IAAI,CA4BlH,CAAC;AAEF,eAAe,wBAAwB,CAAC"}

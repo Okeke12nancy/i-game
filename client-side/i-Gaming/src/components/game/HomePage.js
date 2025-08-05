@@ -81,15 +81,59 @@ const HomePage = () => {
     setTimeRemaining(0);
     setLastSessionResult(data);
     toast.success(`Session ended! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
+    // Redirect to session summary page
+    setTimeout(() => {
+      navigate("/session-summary", { 
+        state: { 
+          sessionData: {
+            winningNumber: data.winningNumber,
+            participantCount: data.participantCount,
+            winnerCount: data.winners?.length || 0,
+            participants: data.participants || [],
+            winners: data.winners || [],
+          }
+        } 
+      });
+    }, 2000);
   };
 
   const handleGameResult = (data) => {
     setLastSessionResult(data);
     toast.success(`Game results are in! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
+    // Redirect to session summary page
+    setTimeout(() => {
+      navigate("/session-summary", { 
+        state: { 
+          sessionData: {
+            winningNumber: data.winningNumber,
+            participantCount: data.participantCount,
+            winnerCount: data.winners?.length || 0,
+            participants: data.participants || [],
+            winners: data.winners || [],
+          }
+        } 
+      });
+    }, 2000);
   };
 
   const clearLastSessionResult = () => {
     setLastSessionResult(null);
+  };
+
+  const viewSessionSummary = () => {
+    if (lastSessionResult) {
+      navigate("/session-summary", { 
+        state: { 
+          sessionData: {
+            winningNumber: lastSessionResult.winningNumber,
+            participantCount: lastSessionResult.participantCount,
+            winnerCount: lastSessionResult.winners?.length || 0,
+            participants: lastSessionResult.participants || [],
+            winners: lastSessionResult.winners || [],
+          }
+        } 
+      });
+    }
   };
 
   const handleCountdownUpdate = (data) => {
@@ -293,12 +337,20 @@ const HomePage = () => {
                     <Trophy className="h-5 w-5 mr-2" />
                     Last Session Results
                   </h3>
-                  <button
-                    onClick={clearLastSessionResult}
-                    className="text-sm text-gray-500 hover:text-gray-700"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={viewSessionSummary}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      View Details
+                    </button>
+                    <button
+                      onClick={clearLastSessionResult}
+                      className="text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center">
