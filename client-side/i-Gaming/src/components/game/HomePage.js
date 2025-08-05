@@ -218,7 +218,7 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
@@ -240,10 +240,10 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="card p-8">
-          {/* User Stats */}
+          
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Hi {user.username}!
@@ -263,7 +263,7 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Session Status */}
+          
           <div className="text-center mb-8">
             {sessionLoading ? (
               <div className="animate-pulse">
@@ -328,7 +328,7 @@ const HomePage = () => {
             )}
           </div>
 
-          {/* Last Session Results */}
+          
           {lastSessionResult && (
             <div className="mt-8">
               <div className="card p-6">
@@ -391,7 +391,7 @@ const HomePage = () => {
             </div>
           )}
 
-          {/* Quick Actions */}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
             <button
               onClick={() => navigate("/leaderboard")}

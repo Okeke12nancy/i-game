@@ -1,3 +1,4 @@
-export declare const supabase: import("@supabase/supabase-js").SupabaseClient<any, "public", any>;
+declare let supabase: any;
+export { supabase };
 export default supabase;
 //# sourceMappingURL=supabaseConfig.d.ts.map

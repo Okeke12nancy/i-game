@@ -2,13 +2,13 @@ import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import express from "express";
-import db from "./config/databaseConfig.js";
 import logger from "./utils/logger.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import authRouter from "./routes/authRoutes.js";
 import gameRouter from "./routes/gameRoutes.js";
+import db from "./config/databaseConfig.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, "../../.env") });
@@ -129,7 +129,6 @@ class StartUpServer {
     async disconnect() {
         logger.info("Server disconnecting...");
         try {
-            await db.close();
             this.server.close(() => {
                 logger.info("Server Closed");
                 process.exit(0);

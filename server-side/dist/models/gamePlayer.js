@@ -77,7 +77,9 @@ class PlayerSession {
                 .order('created_at', { ascending: true });
             if (error)
                 throw error;
-            return data.map(row => ({
+            if (!data)
+                return [];
+            return data.map((row) => ({
                 ...new PlayerSession(row),
                 username: row.users.username,
             }));
@@ -97,7 +99,9 @@ class PlayerSession {
                 .order('created_at', { ascending: true });
             if (error)
                 throw error;
-            return data.map(row => ({
+            if (!data)
+                return [];
+            return data.map((row) => ({
                 ...new PlayerSession(row),
                 username: row.users.username,
             }));
@@ -134,7 +138,7 @@ class PlayerSession {
                 .select('*');
             if (error)
                 throw error;
-            return count !== null && count > 0;
+            return (count || 0) > 0;
         }
         catch (error) {
             logger.error('Error removing player from session:', error);

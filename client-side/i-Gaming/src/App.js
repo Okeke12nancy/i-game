@@ -52,7 +52,7 @@ function App() {
         />
         
         <Routes>
-          {/* Public Routes */}
+  
           <Route 
             path="/login" 
             element={
@@ -70,7 +70,7 @@ function App() {
             } 
           />
           
-          {/* Protected Routes */}
+
           <Route 
             path="/" 
             element={
@@ -104,7 +104,7 @@ function App() {
             } 
           />
           
-          {/* Catch all route */}
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

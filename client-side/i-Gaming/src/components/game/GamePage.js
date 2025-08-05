@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, Users, Trophy, X } from "lucide-react";
+import { ArrowLeft, Clock, Users, Trophy } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import socket from "../../services/socket";
@@ -21,10 +21,10 @@ const GamePage = () => {
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
     setUser(userData);
 
-    // Load active session and user session
+
     loadSessionData();
 
-    // Socket event listeners
+
     socket.on("session_ended", handleSessionEnded);
     socket.on("game_result", handleGameResult);
     socket.on("countdown_update", handleCountdownUpdate);
@@ -50,22 +50,22 @@ const GamePage = () => {
     return () => clearInterval(interval);
   }, [timeRemaining, gameEnded]);
 
-  // Check if session is still active every 10 seconds
+  
   useEffect(() => {
-    if (gameEnded) return; // Don't check if game has already ended
+            if (gameEnded) return;
 
     const sessionCheckInterval = setInterval(async () => {
       try {
         const response = await api.getActiveSession();
         if (!response.success || !response.data.activeSession) {
-          // Session is no longer active, redirect to home
+  
           toast.info("Session has ended. Redirecting to lobby...");
           navigate("/session-summary");
         }
       } catch (error) {
         console.warn("Error checking session status:", error);
       }
-    }, 10000); // Check every 10 seconds
+          }, 10000);
 
     return () => clearInterval(sessionCheckInterval);
   }, [gameEnded, navigate]);
@@ -81,7 +81,7 @@ const GamePage = () => {
         setActiveSession(activeResponse.data.activeSession);
         setTimeRemaining(activeResponse.data.activeSession.timeRemaining || 0);
       } else {
-        // No active session, redirect to home page
+    
         toast.info("No active session found. Redirecting to lobby...");
         navigate("/");
         return;
@@ -94,7 +94,7 @@ const GamePage = () => {
     } catch (error) {
       console.error("Error loading session data:", error);
       toast.error("Failed to load session data");
-      // On error, redirect to home page
+      
       navigate("/");
     }
   };
@@ -104,7 +104,6 @@ const GamePage = () => {
     setTimeRemaining(0);
     setGameResult(data);
     toast.success(`Session ended! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
-    // Redirect to session summary page after showing results briefly
     setTimeout(() => {
       navigate("/session-summary", { 
         state: { 
@@ -124,7 +123,6 @@ const GamePage = () => {
     setGameResult(data);
     setGameEnded(true);
     toast.success(`Game results are in! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
-    // Redirect to session summary page after showing results briefly
     setTimeout(() => {
       navigate("/session-summary", { 
         state: { 
@@ -145,11 +143,11 @@ const GamePage = () => {
   };
 
   const handlePlayerJoined = (data) => {
-    loadSessionData(); // Refresh session data
+    loadSessionData();
   };
 
   const handlePlayerLeft = (data) => {
-    loadSessionData(); // Refresh session data
+    loadSessionData();
   };
 
   const handleNumberSelect = async (number) => {
@@ -166,7 +164,7 @@ const GamePage = () => {
         setSelectedNumber(number);
         setUserSession(response.data.playerSession);
         toast.success(`Selected number ${number}`);
-        loadSessionData(); // Refresh to get updated participant list
+        loadSessionData();
       }
     } catch (error) {
       const message = error.response?.data?.message || "Failed to join session";
@@ -179,14 +177,12 @@ const GamePage = () => {
   const handleLeaveSession = async () => {
     setLoading(true);
     try {
-      // Always try to leave session, even if userSession is null
-      // This handles the case where session has ended but user is still on the page
+
       await api.leaveSession();
       toast.success("Left the session");
       navigate("/");
     } catch (error) {
-      // If there's an error, just redirect to home page
-      // This handles cases where session has already ended
+
       console.warn("Error leaving session:", error);
       toast.info("Redirecting to lobby...");
       navigate("/");
@@ -261,7 +257,7 @@ const GamePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
@@ -286,10 +282,10 @@ const GamePage = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Game Area */}
+          
           <div className="lg:col-span-2">
             <div className="card p-8">
               <div className="text-center space-y-6">
@@ -314,9 +310,9 @@ const GamePage = () => {
             </div>
           </div>
 
-          {/* Sidebar */}
+          
           <div className="space-y-6">
-            {/* Active Players */}
+            
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Users className="h-5 w-5 mr-2" />
@@ -345,7 +341,7 @@ const GamePage = () => {
               </div>
             </div>
 
-            {/* Game Status */}
+            
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Clock className="h-5 w-5 mr-2" />
@@ -377,7 +373,7 @@ const GamePage = () => {
               </div>
             </div>
 
-            {/* Session Results Summary (if game ended) */}
+            
             {gameEnded && gameResult && (
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -407,7 +403,7 @@ const GamePage = () => {
               </div>
             )}
 
-            {/* Winners List (if game ended) */}
+            
             {gameEnded &&
               gameResult?.winners &&
               gameResult.winners.length > 0 && (

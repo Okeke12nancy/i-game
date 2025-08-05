@@ -1,8 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-dotenv.config();
-const supabaseUrl = process.env.PROJECT_URL || '';
-const supabaseKey = process.env.SUPABASE_KEY || '';
-export const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = 'https://sgycieotwvcrdswrsuck.supabase.co';
+const supabaseKey = 'yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNneWNpZW90d3ZjcmRzd3JzdWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MDUyMzgsImV4cCI6MjA2OTk4MTIzOH0.ipulWLzbOIG8gqeTgDWraMbn1XWUgONlYHm9RSPwcz0';
+let supabase = null;
+if (supabaseUrl && supabaseKey) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+}
+else {
+    console.warn('Warning: Supabase environment variables are not set. Supabase client will not be available.');
+}
+export { supabase };
 export default supabase;
 //# sourceMappingURL=supabaseConfig.js.map

@@ -1,11 +1,15 @@
+import { createClient } from '@supabase/supabase-js';
 
-import { createClient } from '@supabase/supabase-js'
-import dotenv from 'dotenv';
+const supabaseUrl: string = 'https://sgycieotwvcrdswrsuck.supabase.co';
+const supabaseKey: string = 'yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNneWNpZW90d3ZjcmRzd3JzdWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MDUyMzgsImV4cCI6MjA2OTk4MTIzOH0.ipulWLzbOIG8gqeTgDWraMbn1XWUgONlYHm9RSPwcz0';
 
-dotenv.config();
+let supabase: any = null;
 
-const supabaseUrl: string = process.env.PROJECT_URL || '';
-const supabaseKey: string = process.env.SUPABASE_KEY || '';
-export const supabase = createClient(supabaseUrl, supabaseKey);
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+} else {
+  console.warn('Warning: Supabase environment variables are not set. Supabase client will not be available.');
+}
 
-export default supabase;
+export { supabase };
+export default supabase; 
