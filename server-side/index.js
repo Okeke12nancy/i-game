@@ -6,6 +6,7 @@ import db from "./config/databaseConfig.js";
 import logger from "./utils/logger.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
 // import socketIo from 'socket.io';
 import authRouter from "./routes/authRoutes.js";
 import gameRouter from "./routes/gameRoutes.js";
@@ -23,7 +24,7 @@ class startUpServer {
     this.server = createServer(this.app);
     this.io = new Server(this.server, {
       cors: {
-        origin: process.env.CLIENT_URL || "http://localhost:3000",
+        origin: "http://localhost:3001",
         methods: ["GET", "POST"],
       },
     });

@@ -7,7 +7,7 @@ class GameService {
   constructor() {
     this.activeSession = null;
     this.sessionTimer = null;
-    this.sessionDuration = parseInt(process.env.SESSION_DURATION) || 20000;
+    this.sessionDuration = parseInt(process.env.SESSION_DURATION) || 30000;
     this.sessionInterval = parseInt(process.env.SESSION_INTERVAL) || 30000;
     this.maxPlayers = parseInt(process.env.MAX_PLAYERS_PER_SESSION) || 10;
   }
@@ -61,6 +61,15 @@ class GameService {
       this.activeSession = session;
       this.startSessionTimer();
 
+      // Emit session started event
+      if (global.io) {
+        global.io.to("game_room").emit("session_started", {
+          sessionId: sessionId,
+          timeRemaining: this.sessionDuration / 1000,
+          message: "New session started"
+        });
+      }
+
       logger.info("Activated session:", sessionId);
       return session;
     } catch (error) {
@@ -91,6 +100,20 @@ class GameService {
         this.activeSession.id,
         selectedNumber
       );
+      
+      // Get user info for socket emission
+      const user = await User.findById(userId);
+      
+      // Emit player joined event
+      if (global.io && user) {
+        global.io.to("game_room").emit("player_joined", {
+          sessionId: this.activeSession.id,
+          userId: userId,
+          username: user.username,
+          selectedNumber: selectedNumber
+        });
+      }
+      
       logger.info(
         `User ${userId} joined session ${this.activeSession.id} with number ${selectedNumber}`
       );
@@ -110,8 +133,22 @@ class GameService {
         userId,
         this.activeSession.id
       );
-      if (removed)
+      
+      if (removed) {
+        // Get user info for socket emission
+        const user = await User.findById(userId);
+        
+        // Emit player left event
+        if (global.io && user) {
+          global.io.to("game_room").emit("player_left", {
+            sessionId: this.activeSession.id,
+            userId: userId,
+            username: user.username
+          });
+        }
+        
         logger.info(`User ${userId} left session ${this.activeSession.id}`);
+      }
 
       return removed;
     } catch (error) {
@@ -137,9 +174,39 @@ class GameService {
 
       await this.updateUserStats(sessionId);
 
+      const participants = await PlayerSession.getSessionParticipants(sessionId);
+      const winners = await PlayerSession.getSessionWinners(sessionId);
+
       logger.info(
         `Completed session ${sessionId} with winning number ${winningNumber}`
       );
+
+      // Emit socket events to notify clients
+      if (global.io) {
+        global.io.to("game_room").emit("session_ended", {
+          sessionId,
+          winningNumber,
+          participantCount: participants.length,
+          message: "Session ended"
+        });
+
+        global.io.to("game_room").emit("game_result", {
+          sessionId,
+          winningNumber,
+          participantCount: participants.length,
+          participants: participants.map((p) => ({
+            id: p.user_id,
+            username: p.username,
+            selectedNumber: p.selected_number,
+            isWinner: p.is_winner,
+          })),
+          winners: winners.map((w) => ({
+            id: w.user_id,
+            username: w.username,
+            selectedNumber: w.selected_number,
+          })),
+        });
+      }
 
       this.activeSession = null;
 
@@ -149,8 +216,8 @@ class GameService {
       return {
         sessionId,
         winningNumber,
-        participants: await PlayerSession.getSessionParticipants(sessionId),
-        winners: await PlayerSession.getSessionWinners(sessionId),
+        participants,
+        winners,
       };
     } catch (error) {
       logger.error("Error completing session:", error);
@@ -179,8 +246,26 @@ class GameService {
   startSessionTimer() {
     if (this.sessionTimer) clearTimeout(this.sessionTimer);
 
+    // Start countdown updates
+    const countdownInterval = setInterval(() => {
+      const timeRemaining = this.calculateTimeRemaining();
+      
+      if (timeRemaining <= 0) {
+        clearInterval(countdownInterval);
+        return;
+      }
+      
+      // Emit countdown update
+      if (global.io) {
+        global.io.to("game_room").emit("countdown_update", {
+          timeRemaining: timeRemaining
+        });
+      }
+    }, 1000);
+
     this.sessionTimer = setTimeout(async () => {
       try {
+        clearInterval(countdownInterval);
         await this.completeSession();
       } catch (error) {
         logger.error("Error in session timer:", error);

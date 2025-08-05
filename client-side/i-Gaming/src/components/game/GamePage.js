@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Users, Trophy, X } from 'lucide-react';
-import toast from 'react-hot-toast';
-import api from '../../services/api';
-import socket from '../../services/socket';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Clock, Users, Trophy, X } from "lucide-react";
+import toast from "react-hot-toast";
+import api from "../../services/api";
+import socket from "../../services/socket";
 
 const GamePage = () => {
   const [user, setUser] = useState(null);
@@ -18,25 +18,25 @@ const GamePage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
     setUser(userData);
 
     // Load active session and user session
     loadSessionData();
 
     // Socket event listeners
-    socket.on('session_ended', handleSessionEnded);
-    socket.on('game_result', handleGameResult);
-    socket.on('countdown_update', handleCountdownUpdate);
-    socket.on('player_joined', handlePlayerJoined);
-    socket.on('player_left', handlePlayerLeft);
+    socket.on("session_ended", handleSessionEnded);
+    socket.on("game_result", handleGameResult);
+    socket.on("countdown_update", handleCountdownUpdate);
+    socket.on("player_joined", handlePlayerJoined);
+    socket.on("player_left", handlePlayerLeft);
 
     return () => {
-      socket.off('session_ended', handleSessionEnded);
-      socket.off('game_result', handleGameResult);
-      socket.off('countdown_update', handleCountdownUpdate);
-      socket.off('player_joined', handlePlayerJoined);
-      socket.off('player_left', handlePlayerLeft);
+      socket.off("session_ended", handleSessionEnded);
+      socket.off("game_result", handleGameResult);
+      socket.off("countdown_update", handleCountdownUpdate);
+      socket.off("player_joined", handlePlayerJoined);
+      socket.off("player_left", handlePlayerLeft);
     };
   }, []);
 
@@ -44,7 +44,7 @@ const GamePage = () => {
     let interval;
     if (timeRemaining > 0 && !gameEnded) {
       interval = setInterval(() => {
-        setTimeRemaining(prev => Math.max(0, prev - 1));
+        setTimeRemaining((prev) => Math.max(0, prev - 1));
       }, 1000);
     }
     return () => clearInterval(interval);
@@ -54,7 +54,7 @@ const GamePage = () => {
     try {
       const [activeResponse, userResponse] = await Promise.all([
         api.getActiveSession(),
-        api.getUserSession()
+        api.getUserSession(),
       ]);
 
       if (activeResponse.success && activeResponse.data.activeSession) {
@@ -67,21 +67,30 @@ const GamePage = () => {
         setSelectedNumber(userResponse.data.userSession.selected_number);
       }
     } catch (error) {
-      console.error('Error loading session data:', error);
-      toast.error('Failed to load session data');
+      console.error("Error loading session data:", error);
+      toast.error("Failed to load session data");
     }
   };
 
   const handleSessionEnded = (data) => {
     setGameEnded(true);
     setTimeRemaining(0);
-    toast.success('Game session ended!');
+    setGameResult(data);
+    toast.success(`Session ended! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
+    // Redirect to homepage after a longer delay to show the results
+    setTimeout(() => {
+      navigate("/");
+    }, 5000);
   };
 
   const handleGameResult = (data) => {
     setGameResult(data);
     setGameEnded(true);
-    toast.success('Game results are in!');
+    toast.success(`Game results are in! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
+    // Redirect to homepage after a longer delay to show the results
+    setTimeout(() => {
+      navigate("/");
+    }, 5000);
   };
 
   const handleCountdownUpdate = (data) => {
@@ -98,14 +107,14 @@ const GamePage = () => {
 
   const handleNumberSelect = async (number) => {
     if (userSession || selectedNumber) {
-      toast.error('You have already selected a number');
+      toast.error("You have already selected a number");
       return;
     }
 
     setLoading(true);
     try {
       const response = await api.joinSession(number);
-      
+
       if (response.success) {
         setSelectedNumber(number);
         setUserSession(response.data.playerSession);
@@ -113,7 +122,7 @@ const GamePage = () => {
         loadSessionData(); // Refresh to get updated participant list
       }
     } catch (error) {
-      const message = error.response?.data?.message || 'Failed to join session';
+      const message = error.response?.data?.message || "Failed to join session";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -122,17 +131,17 @@ const GamePage = () => {
 
   const handleLeaveSession = async () => {
     if (!userSession) {
-      navigate('/');
+      navigate("/");
       return;
     }
 
     setLoading(true);
     try {
       await api.leaveSession();
-      toast.success('Left the session');
-      navigate('/');
+      toast.success("Left the session");
+      navigate("/");
     } catch (error) {
-      toast.error('Failed to leave session');
+      toast.error("Failed to leave session");
     } finally {
       setLoading(false);
     }
@@ -141,7 +150,7 @@ const GamePage = () => {
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const renderNumberGrid = () => {
@@ -153,9 +162,9 @@ const GamePage = () => {
             onClick={() => handleNumberSelect(number)}
             disabled={loading || userSession || selectedNumber || gameEnded}
             className={`game-number ${
-              selectedNumber === number ? 'selected' : ''
+              selectedNumber === number ? "selected" : ""
             } ${
-              gameResult?.winningNumber === number ? 'winner' : ''
+              gameResult?.winningNumber === number ? "winner" : ""
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {number}
@@ -180,7 +189,16 @@ const GamePage = () => {
           )}
         </div>
         <div className="text-lg">
-          Winning Number: <span className="font-bold text-success-600">{gameResult.winningNumber}</span>
+          Winning Number:{" "}
+          <span className="font-bold text-success-600">
+            {gameResult.winningNumber}
+          </span>
+        </div>
+        <div className="text-lg">
+          Total Participants:{" "}
+          <span className="font-bold text-blue-600">
+            {gameResult.participantCount || gameResult.participants?.length || 0}
+          </span>
         </div>
         <div className="text-sm text-gray-600">
           Your number: <span className="font-semibold">{selectedNumber}</span>
@@ -228,16 +246,14 @@ const GamePage = () => {
             <div className="card p-8">
               <div className="text-center space-y-6">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {gameEnded ? 'Game Results' : 'Pick Your Number'}
+                  {gameEnded ? "Game Results" : "Pick Your Number"}
                 </h2>
-                
+
                 {gameEnded ? (
                   renderGameResult()
                 ) : (
                   <>
-                    <p className="text-gray-600">
-                      Select a number from 1 to 9
-                    </p>
+                    <p className="text-gray-600">Select a number from 1 to 9</p>
                     {renderNumberGrid()}
                     {selectedNumber && (
                       <div className="text-success-600 font-semibold">
@@ -274,7 +290,8 @@ const GamePage = () => {
                     )}
                   </div>
                 ))}
-                {(!activeSession?.participants || activeSession.participants.length === 0) && (
+                {(!activeSession?.participants ||
+                  activeSession.participants.length === 0) && (
                   <p className="text-sm text-gray-500">No players yet</p>
                 )}
               </div>
@@ -289,47 +306,85 @@ const GamePage = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
-                  <span className={`font-medium ${
-                    gameEnded ? 'text-gray-600' : 'text-success-600'
-                  }`}>
-                    {gameEnded ? 'Ended' : 'Active'}
+                  <span
+                    className={`font-medium ${
+                      gameEnded ? "text-gray-600" : "text-success-600"
+                    }`}
+                  >
+                    {gameEnded ? "Ended" : "Active"}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Time Left:</span>
-                  <span className="font-medium">{formatTime(timeRemaining)}</span>
+                  <span className="font-medium">
+                    {formatTime(timeRemaining)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Players:</span>
-                  <span className="font-medium">{activeSession?.playerCount || 0}/10</span>
+                  <span className="font-medium">
+                    {activeSession?.playerCount || 0}/10
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Winners (if game ended) */}
-            {gameEnded && gameResult?.winners && gameResult.winners.length > 0 && (
+            {/* Session Results Summary (if game ended) */}
+            {gameEnded && gameResult && (
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Trophy className="h-5 w-5 mr-2" />
-                  Winners
+                  Session Results
                 </h3>
-                <div className="space-y-2">
-                  {gameResult.winners.map((winner) => (
-                    <div
-                      key={winner.id}
-                      className="flex items-center justify-between p-2 bg-success-50 rounded"
-                    >
-                      <span className="text-sm font-medium text-success-700">
-                        {winner.username}
-                      </span>
-                      <span className="text-xs text-success-600">
-                        #{winner.selectedNumber}
-                      </span>
-                    </div>
-                  ))}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Winning Number:</span>
+                    <span className="text-lg font-bold text-success-600">
+                      {gameResult.winningNumber}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Total Participants:</span>
+                    <span className="text-lg font-bold text-blue-600">
+                      {gameResult.participantCount || gameResult.participants?.length || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Winners:</span>
+                    <span className="text-sm font-medium text-success-600">
+                      {gameResult.winners?.length || 0}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* Winners List (if game ended) */}
+            {gameEnded &&
+              gameResult?.winners &&
+              gameResult.winners.length > 0 && (
+                <div className="card p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Trophy className="h-5 w-5 mr-2" />
+                    Winners
+                  </h3>
+                  <div className="space-y-2">
+                    {gameResult.winners.map((winner) => (
+                      <div
+                        key={winner.id}
+                        className="flex items-center justify-between p-2 bg-success-50 rounded"
+                      >
+                        <span className="text-sm font-medium text-success-700">
+                          {winner.username}
+                        </span>
+                        <span className="text-xs text-success-600">
+                          #{winner.selectedNumber}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
         </div>
       </div>
@@ -337,4 +392,4 @@ const GamePage = () => {
   );
 };
 
-export default GamePage; 
+export default GamePage;

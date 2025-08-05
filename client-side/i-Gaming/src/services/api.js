@@ -57,8 +57,21 @@ class ApiService {
     return response.data;
   }
 
+  async refreshUserStats() {
+    const response = await this.client.get('/auth/profile');
+    if (response.data.success) {
+      localStorage.setItem('user', JSON.stringify(response.data.data));
+    }
+    return response.data;
+  }
+
   async getActiveSession() {
     const response = await this.client.get('/game/session/active');
+    return response.data;
+  }
+
+  async createSession() {
+    const response = await this.client.post('/game/session/create');
     return response.data;
   }
 
@@ -78,6 +91,8 @@ class ApiService {
     const response = await this.client.get('/game/session/user');
     return response.data;
   }
+
+
 
   async getTopPlayers(limit = 10) {
     const response = await this.client.get(`/game/leaderboard?limit=${limit}`);
