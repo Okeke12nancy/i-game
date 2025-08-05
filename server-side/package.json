@@ -8,8 +8,7 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "clean": "rm -rf dist",
-    "prebuild": "npm run clean",
+ 
     "setup-db": "tsx src/scripts/setup-db.ts"
   },
   "dependencies": {

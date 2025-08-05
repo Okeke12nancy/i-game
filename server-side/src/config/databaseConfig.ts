@@ -40,7 +40,7 @@ class Database {
       return this.pool;
     } catch (error:any) {
       logger.error(`Database connection error: ${error.code} - ${error.message}`, error.stack);
-      // this.connected = false;
+      
       throw error;
     }
   }

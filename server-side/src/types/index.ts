@@ -1,11 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { Socket } from 'socket.io';
 
-// User types
 export interface User {
   id: number;
   username: string;
-  email: string;
   password: string;
   total_wins: number;
   total_losses: number;
@@ -15,7 +13,6 @@ export interface User {
 
 export interface UserWithoutPassword extends Omit<User, 'password'> {}
 
-// Session types
 export interface GameSession {
   id: number;
   created_by: number;
@@ -37,13 +34,11 @@ export interface PlayerSession {
   updated_at: Date;
 }
 
-// Request types
 export interface AuthenticatedRequest extends Request {
   user?: UserWithoutPassword;
   userId?: number;
 }
 
-// Response types
 export interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
@@ -51,7 +46,6 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
-// Game service types
 export interface SessionInfo {
   id: number;
   status: string;
@@ -83,12 +77,10 @@ export interface SessionResult {
   winners: Winner[];
 }
 
-// Socket types
 export interface AuthenticatedSocket extends Socket {
   userId?: number;
 }
 
-// Environment variables
 export interface EnvironmentVariables {
   PORT: string;
   NODE_ENV: string;
@@ -103,7 +95,6 @@ export interface EnvironmentVariables {
   MAX_PLAYERS_PER_SESSION: string;
 }
 
-// Database types
 export interface DatabaseConfig {
   host: string;
   user: string;
@@ -112,17 +103,14 @@ export interface DatabaseConfig {
   port: number;
 }
 
-// Middleware types
 export interface AuthMiddleware {
   (req: AuthenticatedRequest, res: Response, next: NextFunction): void;
 }
 
-// Controller types
 export interface Controller {
   [key: string]: (req: AuthenticatedRequest, res: Response) => Promise<void>;
 }
 
-// Service types
 export interface GameServiceInterface {
   activeSession: GameSession | null;
   sessionTimer: NodeJS.Timeout | null;

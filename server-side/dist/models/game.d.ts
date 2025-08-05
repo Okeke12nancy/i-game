@@ -1,7 +1,7 @@
 import { GameSession as GameSessionType } from "../types/index.js";
 declare class GameSession implements GameSessionType {
     id: number;
-    status: 'pending' | 'active' | 'completed';
+    status: "waiting" | "active" | "completed";
     winning_number: number | null;
     start_time: Date | null;
     end_time: Date | null;

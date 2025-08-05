@@ -7,9 +7,9 @@ declare class GameController {
     leaveSession(req: AuthenticatedRequest, res: Response): Promise<void>;
     getUserSession(req: AuthenticatedRequest, res: Response): Promise<void>;
     getTopPlayers(req: Request, res: Response): Promise<void>;
-    getSessionsByDate(req: Request, res: Response): Promise<void>;
+    getSessionsByDate(req: Request, res: Response): Promise<any>;
     getRecentSessions(req: Request, res: Response): Promise<void>;
-    getSessionDetails(req: Request, res: Response): Promise<void>;
+    getSessionDetails(req: Request, res: Response): Promise<any>;
 }
 declare const _default: GameController;
 export default _default;

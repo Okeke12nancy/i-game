@@ -68,7 +68,7 @@ class GameService implements GameServiceInterface {
       this.activeSession = session;
       this.startSessionTimer();
 
-      // Emit session started event
+
       if (global.io) {
         global.io.to("game_room").emit("session_started", {
           sessionId: sessionId,
@@ -108,10 +108,7 @@ class GameService implements GameServiceInterface {
         selectedNumber
       );
       
-      // Get user info for socket emission
       const user = await User.findById(userId);
-      
-      // Emit player joined event
       if (global.io && user) {
         global.io.to("game_room").emit("player_joined", {
           sessionId: this.activeSession.id,
@@ -134,16 +131,11 @@ class GameService implements GameServiceInterface {
 
   async leaveSession(userId: number): Promise<boolean> {
     try {
-      // First, check if user has an active player session
       const userSession = await PlayerSession.getUserActiveSession(userId);
       
       if (!userSession) {
-        // User is not in any session, return success
         return true;
       }
-
-      // If there's no active session in GameService but user has a session record,
-      // it means the session has ended. Just remove the user's session record.
       if (!this.activeSession) {
         const removed = await PlayerSession.removeFromSession(userId, userSession.session_id);
         if (removed) {
@@ -152,17 +144,13 @@ class GameService implements GameServiceInterface {
         return removed;
       }
 
-      // Normal case: active session exists
       const removed = await PlayerSession.removeFromSession(
         userId,
         this.activeSession.id
       );
       
       if (removed) {
-        // Get user info for socket emission
         const user = await User.findById(userId);
-        
-        // Emit player left event
         if (global.io && user) {
           global.io.to("game_room").emit("player_left", {
             sessionId: this.activeSession.id,
@@ -234,8 +222,7 @@ class GameService implements GameServiceInterface {
 
       this.activeSession = null;
 
-      // Schedule next session automatically
-      // this.scheduleNextSession();
+
 
       return {
         sessionId,

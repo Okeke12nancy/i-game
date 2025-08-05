@@ -1,5 +1,5 @@
-import db from "../config/databaseConfig.js";
 import logger from "../utils/logger.js";
+import { supabase } from "../config/supabaseConfig.js";
 class GameSession {
     id;
     status;
@@ -11,7 +11,7 @@ class GameSession {
     created_by;
     constructor(data = {}) {
         this.id = data.id || 0;
-        this.status = data.status || 'pending';
+        this.status = data.status || "waiting";
         this.winning_number = data.winning_number || null;
         this.start_time = data.start_time || null;
         this.end_time = data.end_time || null;
@@ -21,14 +21,14 @@ class GameSession {
     }
     static async create(createdBy) {
         try {
-            const query = `
-        INSERT INTO game_sessions (status, created_by, start_time)
-        VALUES ($1, $2, NOW())
-        RETURNING *
-      `;
-            const values = ["pending", createdBy];
-            const result = await db.query(query, values);
-            return new GameSession(result.rows[0]);
+            const { data, error } = await supabase
+                .from("game_sessions")
+                .insert([{ status: "waiting", created_by: createdBy, start_time: new Date() }])
+                .select("*")
+                .single();
+            if (error)
+                throw error;
+            return new GameSession(data);
         }
         catch (error) {
             logger.error("Error creating game session:", error);
@@ -37,14 +37,16 @@ class GameSession {
     }
     static async findActive() {
         try {
-            const query = `
-        SELECT * FROM game_sessions 
-        WHERE status = 'active' 
-        ORDER BY created_at DESC 
-        LIMIT 1
-      `;
-            const result = await db.query(query);
-            return result.rows[0] ? new GameSession(result.rows[0]) : null;
+            const { data, error } = await supabase
+                .from("game_sessions")
+                .select("*")
+                .eq("status", "active")
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            if (error)
+                throw error;
+            return data ? new GameSession(data) : null;
         }
         catch (error) {
             logger.error("Error finding active session:", error);
@@ -53,24 +55,31 @@ class GameSession {
     }
     static async findById(id) {
         try {
-            const query = "SELECT * FROM game_sessions WHERE id = $1";
-            const result = await db.query(query, [id]);
-            return result.rows[0] ? new GameSession(result.rows[0]) : null;
+            const { data, error } = await supabase
+                .from("game_sessions")
+                .select("*")
+                .eq("id", id)
+                .maybeSingle();
+            if (error)
+                throw error;
+            return data ? new GameSession(data) : null;
         }
         catch (error) {
-            logger.error("Error finding game session by id:", error);
+            logger.error("Error finding game session by ID:", error);
             throw error;
         }
     }
     static async getSessionsByDate(date) {
         try {
-            const query = `
-        SELECT * FROM game_sessions 
-        WHERE DATE(created_at) = $1
-        ORDER BY created_at DESC
-      `;
-            const result = await db.query(query, [date]);
-            return result.rows.map((row) => new GameSession(row));
+            const { data, error } = await supabase
+                .from("game_sessions")
+                .select("*")
+                .filter("created_at", "gte", `${date} 00:00:00`)
+                .filter("created_at", "lte", `${date} 23:59:59`)
+                .order("created_at", { ascending: false });
+            if (error)
+                throw error;
+            return data.map((row) => new GameSession(row));
         }
         catch (error) {
             logger.error("Error getting sessions by date:", error);
@@ -79,13 +88,14 @@ class GameSession {
     }
     static async getRecentSessions(limit = 10) {
         try {
-            const query = `
-        SELECT * FROM game_sessions 
-        ORDER BY created_at DESC 
-        LIMIT $1
-      `;
-            const result = await db.query(query, [limit]);
-            return result.rows.map((row) => new GameSession(row));
+            const { data, error } = await supabase
+                .from("game_sessions")
+                .select("*")
+                .order("created_at", { ascending: false })
+                .limit(limit);
+            if (error)
+                throw error;
+            return data.map((row) => new GameSession(row));
         }
         catch (error) {
             logger.error("Error getting recent sessions:", error);
@@ -94,14 +104,15 @@ class GameSession {
     }
     async activate() {
         try {
-            const query = `
-        UPDATE game_sessions 
-        SET status = 'active', start_time = NOW(), updated_at = NOW()
-        WHERE id = $1
-        RETURNING *
-      `;
-            const result = await db.query(query, [this.id]);
-            Object.assign(this, result.rows[0]);
+            const { data, error } = await supabase
+                .from("game_sessions")
+                .update({ status: "active", start_time: new Date(), updated_at: new Date() })
+                .eq("id", this.id)
+                .select("*")
+                .single();
+            if (error)
+                throw error;
+            Object.assign(this, data);
             return this;
         }
         catch (error) {
@@ -111,28 +122,22 @@ class GameSession {
     }
     async complete(winningNumber = null) {
         try {
-            let query;
-            let params;
-            if (winningNumber !== null) {
-                query = `
-        UPDATE game_sessions 
-        SET status = 'completed', winning_number = $1, end_time = NOW(), updated_at = NOW()
-        WHERE id = $2
-        RETURNING *
-      `;
-                params = [winningNumber, this.id];
-            }
-            else {
-                query = `
-        UPDATE game_sessions 
-        SET status = 'completed', end_time = NOW(), updated_at = NOW()
-        WHERE id = $1
-        RETURNING *
-      `;
-                params = [this.id];
-            }
-            const result = await db.query(query, params);
-            Object.assign(this, result.rows[0]);
+            const updateData = {
+                status: "completed",
+                end_time: new Date(),
+                updated_at: new Date(),
+            };
+            if (winningNumber !== null)
+                updateData.winning_number = winningNumber;
+            const { data, error } = await supabase
+                .from("game_sessions")
+                .update(updateData)
+                .eq("id", this.id)
+                .select("*")
+                .single();
+            if (error)
+                throw error;
+            Object.assign(this, data);
             return this;
         }
         catch (error) {
@@ -142,15 +147,20 @@ class GameSession {
     }
     async getParticipants() {
         try {
-            const query = `
-        SELECT u.id, u.username, ps.selected_number, ps.is_winner, ps.created_at
-        FROM player_sessions ps
-        JOIN users u ON ps.user_id = u.id
-        WHERE ps.session_id = $1
-        ORDER BY ps.created_at ASC
-      `;
-            const result = await db.query(query, [this.id]);
-            return result.rows;
+            const { data, error } = await supabase
+                .from("player_sessions")
+                .select("selected_number, is_winner, created_at, users:users!inner(id, username)")
+                .eq("session_id", this.id)
+                .order("created_at", { ascending: true });
+            if (error)
+                throw error;
+            return data.map((row) => ({
+                id: row.users?.[0]?.id,
+                username: row?.users?.[0]?.username,
+                selected_number: row.selected_number,
+                is_winner: row.is_winner,
+                created_at: row.created_at,
+            }));
         }
         catch (error) {
             logger.error("Error getting session participants:", error);
@@ -159,15 +169,19 @@ class GameSession {
     }
     async getWinners() {
         try {
-            const query = `
-        SELECT u.id, u.username, ps.selected_number
-        FROM player_sessions ps
-        JOIN users u ON ps.user_id = u.id
-        WHERE ps.session_id = $1 AND ps.is_winner = true
-        ORDER BY ps.created_at ASC
-      `;
-            const result = await db.query(query, [this.id]);
-            return result.rows;
+            const { data, error } = await supabase
+                .from("player_sessions")
+                .select("selected_number, users:users!inner(id, username)")
+                .eq("session_id", this.id)
+                .eq("is_winner", true)
+                .order("created_at", { ascending: true });
+            if (error)
+                throw error;
+            return data.map((row) => ({
+                id: row?.users?.[0]?.id,
+                username: row?.users?.[0]?.username,
+                selected_number: row.selected_number,
+            }));
         }
         catch (error) {
             logger.error("Error getting session winners:", error);

@@ -14,7 +14,7 @@ export interface UserWithoutPassword extends Omit<User, 'password'> {
 export interface GameSession {
     id: number;
     created_by: number;
-    status: 'pending' | 'active' | 'completed';
+    status: 'waiting' | 'active' | 'completed';
     start_time: Date | null;
     end_time: Date | null;
     winning_number: number | null;

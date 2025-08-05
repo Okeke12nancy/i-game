@@ -7,7 +7,7 @@ class ValidationMiddleware {
     return (req: Request, res: Response, next: NextFunction): void => {
       const { error } = schema.validate(req.body);
 
-      if (error) {
+      if (error && error.details && error.details[0]) {
         logger.warn("Validation error:", {
           error: error.details[0].message,
           body: req.body,
@@ -16,7 +16,7 @@ class ValidationMiddleware {
         res.status(400).json({
           success: false,
           message: "Validation error",
-          error: error.details[0].message,
+          error: error?.details[0]?.message,
         });
         return;
       }

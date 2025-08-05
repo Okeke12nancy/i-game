@@ -2,6 +2,8 @@ import jwt from "jsonwebtoken";
 import User from "../models/UserModel.js";
 import logger from "../utils/logger.js";
 import PlayerSession from "../models/gamePlayer.js";
+import dotenv from "dotenv";
+dotenv.config();
 class AuthMiddleware {
     async authMiddlewares(req, res, next) {
         try {
@@ -50,9 +52,9 @@ class AuthMiddleware {
         }
     }
     generateToken(userId) {
-        const secret = process.env.JWT_SECRET || "default_secret";
-        const expiresIn = process.env.JWT_EXPIRES_IN || "48h";
-        return jwt.sign({ userId }, Buffer.from(secret), { expiresIn });
+        const secret = process.env.JWT_SECRET ?? "default_secret";
+        const expiresIn = process.env.JWT_EXPIRES_IN ?? "48h";
+        return jwt.sign({ userId }, secret, { expiresIn });
     }
     async checkoutActiveSession(req, res, next) {
         try {

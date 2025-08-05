@@ -28,7 +28,7 @@ async function setupDatabase() {
         const createGameSessionsTable = `
             CREATE TABLE IF NOT EXISTS game_sessions (
                 id SERIAL PRIMARY KEY,
-                status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'completed')),
+                status VARCHAR(20) DEFAULT 'waiting' CHECK (status IN ('waiting', 'active', 'completed')),
                 winning_number INTEGER,
                 start_time TIMESTAMP,
                 end_time TIMESTAMP,

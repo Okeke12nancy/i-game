@@ -232,9 +232,15 @@ class GameController {
     }
   }
 
-  async getSessionsByDate(req: Request, res: Response): Promise<void> {
+  async getSessionsByDate(req: Request, res: Response): Promise<any> {
     try {
       const { date } = req.params;
+      if (!date) {
+        return res.status(400).json({
+          success: false,
+          message: "Date parameter is required",
+        });
+      }
       const sessions = await GameSession.getSessionsByDate(date);
 
       const sessionsWithDetails = await Promise.all(
@@ -327,9 +333,15 @@ class GameController {
     }
   }
 
-  async getSessionDetails(req: Request, res: Response): Promise<void> {
+  async getSessionDetails(req: Request, res: Response): Promise<any> {
     try {
       const { sessionId } = req.params;
+      if(!sessionId) {
+        return res.status(400).json({
+          success: false,
+          message: "Session ID is required",
+        });
+      }
       const session = await GameSession.findById(parseInt(sessionId));
 
       if (!session) {
@@ -339,7 +351,12 @@ class GameController {
         });
         return;
       }
-
+if(!sessionId) {
+  return res.status(400).json({
+    success: false,
+    message: "Session ID is required",
+  });
+}
       const participants = await GameService.getSessionParticipants(parseInt(sessionId));
       const winners = await GameService.getSessionWinners(parseInt(sessionId));
 

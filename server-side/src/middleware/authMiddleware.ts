@@ -1,9 +1,11 @@
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import User from "../models/UserModel.js";
 import logger from "../utils/logger.js";
 import PlayerSession from "../models/gamePlayer.js";
 import { AuthenticatedRequest } from "../types/index.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 class AuthMiddleware {
   async authMiddlewares(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
@@ -58,11 +60,11 @@ class AuthMiddleware {
       });
     }
   }
-
   generateToken(userId: number): string {
-    return jwt.sign({ userId }, process.env.JWT_SECRET || "default_secret", {
-      expiresIn: process.env.JWT_EXPIRES_IN || "48h",
-    });
+    const secret = process.env.JWT_SECRET ?? "default_secret";
+    const expiresIn = process.env.JWT_EXPIRES_IN ?? "48h";
+  
+    return jwt.sign({ userId }, secret, { expiresIn } as SignOptions);
   }
 
   async checkoutActiveSession(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
