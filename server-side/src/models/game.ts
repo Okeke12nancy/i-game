@@ -28,7 +28,7 @@ class GameSession implements GameSessionType {
     try {
       const { data, error } = await supabase
         .from("game_sessions")
-        .insert([{ status: "active", created_by: createdBy, start_time: new Date() }])
+        .insert([{ status: "waiting", created_by: createdBy, start_time: new Date() }])
         .select("*")
         .single();
 
@@ -129,14 +129,6 @@ class GameSession implements GameSessionType {
       throw error;
     }
   }
-
-  static async updateStartTime(sessionId: number, startTime: Date) {
-    await supabase.query(
-      `UPDATE game_sessions SET start_time = $1 WHERE id = $2`,
-      [startTime, sessionId]
-    );
-  }
-  
 
   // ✅ Complete a session
   async complete(winningNumber: number | null = null): Promise<GameSession> {
