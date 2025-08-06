@@ -58,7 +58,7 @@ const HomePage = () => {
     try {
       setSessionLoading(true);
       const response = await api.getActiveSession();
-
+console.log('ACTIVE SESSION',response);
       if (response.success && response.data.activeSession) {
         setActiveSession(response.data.activeSession);
         setTimeRemaining(response.data.activeSession.timeRemaining || 0);
