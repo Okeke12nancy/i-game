@@ -1,19 +1,20 @@
-import axios from 'axios';
+import axios from "axios";
 
 class ApiService {
   constructor() {
-    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
-    // this.baseURL = process.env.REACT_APP_API_URL || 'https://nancy.carevia.icu/api';
+    // this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+    this.baseURL =
+      process.env.REACT_APP_API_URL || "https://igame-hx7n.onrender.com/api";
     this.client = axios.create({
       baseURL: this.baseURL,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -28,9 +29,9 @@ class ApiService {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
         }
         return Promise.reject(error);
       }
@@ -38,7 +39,7 @@ class ApiService {
   }
 
   async register(username, password) {
-    const response = await this.client.post('/auth/register', {
+    const response = await this.client.post("/auth/register", {
       username,
       password,
     });
@@ -46,7 +47,7 @@ class ApiService {
   }
 
   async login(username, password) {
-    const response = await this.client.post('/auth/login', {
+    const response = await this.client.post("/auth/login", {
       username,
       password,
     });
@@ -54,46 +55,44 @@ class ApiService {
   }
 
   async getProfile() {
-    const response = await this.client.get('/auth/profile');
+    const response = await this.client.get("/auth/profile");
     return response.data;
   }
 
   async refreshUserStats() {
-    const response = await this.client.get('/auth/profile');
+    const response = await this.client.get("/auth/profile");
     if (response.data.success) {
-      localStorage.setItem('user', JSON.stringify(response.data.data));
+      localStorage.setItem("user", JSON.stringify(response.data.data));
     }
     return response.data;
   }
 
   async getActiveSession() {
-    const response = await this.client.get('/game/session/active');
+    const response = await this.client.get("/game/session/active");
     return response.data;
   }
 
   async createSession() {
-    const response = await this.client.post('/game/session/create');
+    const response = await this.client.post("/game/session/create");
     return response.data;
   }
 
   async joinSession(selectedNumber) {
-    const response = await this.client.post('/game/session/join', {
+    const response = await this.client.post("/game/session/join", {
       selectedNumber,
     });
     return response.data;
   }
 
   async leaveSession() {
-    const response = await this.client.post('/game/session/leave');
+    const response = await this.client.post("/game/session/leave");
     return response.data;
   }
 
   async getUserSession() {
-    const response = await this.client.get('/game/session/user');
+    const response = await this.client.get("/game/session/user");
     return response.data;
   }
-
-
 
   async getTopPlayers(limit = 10) {
     const response = await this.client.get(`/game/leaderboard?limit=${limit}`);
@@ -106,7 +105,9 @@ class ApiService {
   }
 
   async getRecentSessions(limit = 10) {
-    const response = await this.client.get(`/game/sessions/recent?limit=${limit}`);
+    const response = await this.client.get(
+      `/game/sessions/recent?limit=${limit}`
+    );
     return response.data;
   }
 
@@ -116,9 +117,9 @@ class ApiService {
   }
 
   async healthCheck() {
-    const response = await this.client.get('/health');
+    const response = await this.client.get("/health");
     return response.data;
   }
 }
 
-export default new ApiService(); 
+export default new ApiService();
