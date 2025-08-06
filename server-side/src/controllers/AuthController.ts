@@ -97,10 +97,21 @@ class AuthController {
         return;
       }
 
+      // res.json({
+      //   success: true,
+      //   data: {
+      //     data: user,
+      //   },
+      // });
       res.json({
         success: true,
         data: {
-          user: user,
+          id: user.id,
+          username: user.username,
+          total_wins: user.total_wins,
+          total_losses: user.total_losses,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
         },
       });
     } catch (error: any) {
@@ -139,4 +150,4 @@ class AuthController {
   }
 }
 
-export default new AuthController(); 
+export default new AuthController();

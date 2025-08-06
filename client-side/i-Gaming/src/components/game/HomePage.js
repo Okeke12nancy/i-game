@@ -16,16 +16,15 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user") || "{}");
-    setUser(userData);
-
+    const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+    setUser(localUser);
     // Connect to socket
     socket.connect();
     socket.joinGameRoom();
 
     // Load active session
     loadActiveSession();
-
+    loadUserStats();
     // Socket event listeners
     socket.on("session_started", handleSessionStarted);
     socket.on("session_ended", handleSessionEnded);
@@ -58,7 +57,7 @@ const HomePage = () => {
     try {
       setSessionLoading(true);
       const response = await api.getActiveSession();
-
+      console.log("ACTIVE SESSION", response);
       if (response.success && response.data.activeSession) {
         setActiveSession(response.data.activeSession);
         setTimeRemaining(response.data.activeSession.timeRemaining || 0);
@@ -76,42 +75,55 @@ const HomePage = () => {
     toast.success("New game session started!");
   };
 
+  const loadUserStats = async () => {
+    const response = await api.refreshUserStats();
+    if (response.success) {
+      localStorage.setItem("user", JSON.stringify(response.data));
+      // setUser(response.data);
+    }
+    return response.data;
+  };
+
   const handleSessionEnded = (data) => {
     setActiveSession(null);
     setTimeRemaining(0);
     setLastSessionResult(data);
-    toast.success(`Session ended! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
+    toast.success(
+      `Session ended! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`
+    );
     // Redirect to session summary page
     setTimeout(() => {
-      navigate("/session-summary", { 
-        state: { 
+      navigate("/session-summary", {
+        state: {
           sessionData: {
             winningNumber: data.winningNumber,
             participantCount: data.participantCount,
             winnerCount: data.winners?.length || 0,
             participants: data.participants || [],
             winners: data.winners || [],
-          }
-        } 
+          },
+        },
       });
     }, 2000);
   };
 
   const handleGameResult = (data) => {
     setLastSessionResult(data);
-    toast.success(`Game results are in! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
+    toast.success(
+      `Game results are in! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`
+    );
     // Redirect to session summary page
     setTimeout(() => {
-      navigate("/session-summary", { 
-        state: { 
+      navigate("/session-summary", {
+        state: {
           sessionData: {
             winningNumber: data.winningNumber,
             participantCount: data.participantCount,
             winnerCount: data.winners?.length || 0,
             participants: data.participants || [],
             winners: data.winners || [],
-          }
-        } 
+          },
+        },
       });
     }, 2000);
   };
@@ -122,16 +134,16 @@ const HomePage = () => {
 
   const viewSessionSummary = () => {
     if (lastSessionResult) {
-      navigate("/session-summary", { 
-        state: { 
+      navigate("/session-summary", {
+        state: {
           sessionData: {
             winningNumber: lastSessionResult.winningNumber,
             participantCount: lastSessionResult.participantCount,
             winnerCount: lastSessionResult.winners?.length || 0,
             participants: lastSessionResult.participants || [],
             winners: lastSessionResult.winners || [],
-          }
-        } 
+          },
+        },
       });
     }
   };
@@ -142,9 +154,9 @@ const HomePage = () => {
 
   const handlePlayerJoined = (data) => {
     if (activeSession && data.sessionId === activeSession.id) {
-      setActiveSession(prev => ({
+      setActiveSession((prev) => ({
         ...prev,
-        playerCount: (prev.playerCount || 0) + 1
+        playerCount: (prev.playerCount || 0) + 1,
       }));
       toast.success(`${data.username} joined the session!`);
     }
@@ -152,9 +164,9 @@ const HomePage = () => {
 
   const handlePlayerLeft = (data) => {
     if (activeSession && data.sessionId === activeSession.id) {
-      setActiveSession(prev => ({
+      setActiveSession((prev) => ({
         ...prev,
-        playerCount: Math.max(0, (prev.playerCount || 0) - 1)
+        playerCount: Math.max(0, (prev.playerCount || 0) - 1),
       }));
       toast.info(`${data.username} left the session.`);
     }
@@ -164,7 +176,7 @@ const HomePage = () => {
     setLoading(true);
     try {
       const response = await api.createSession();
-      
+
       if (response.success) {
         toast.success("Session created successfully!");
         // Reload active session to get updated data
@@ -204,8 +216,6 @@ const HomePage = () => {
     navigate("/login");
   };
 
-
-
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -218,7 +228,6 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
@@ -240,10 +249,8 @@ const HomePage = () => {
         </div>
       </div>
 
-      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="card p-8">
-          
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Hi {user.username}!
@@ -263,7 +270,6 @@ const HomePage = () => {
             </div>
           </div>
 
-          
           <div className="text-center mb-8">
             {sessionLoading ? (
               <div className="animate-pulse">
@@ -295,7 +301,8 @@ const HomePage = () => {
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
                   ) : timeRemaining === 0 ? (
                     "Session Ended"
-                  ) : activeSession.createdBy && activeSession.createdBy.id === user.id ? (
+                  ) : activeSession.createdBy &&
+                    activeSession.createdBy.id === user.id ? (
                     "JOIN YOUR SESSION"
                   ) : (
                     "JOIN SESSION"
@@ -328,7 +335,6 @@ const HomePage = () => {
             )}
           </div>
 
-          
           {lastSessionResult && (
             <div className="mt-8">
               <div className="card p-6">
@@ -361,9 +367,13 @@ const HomePage = () => {
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-600">
-                      {lastSessionResult.participantCount || lastSessionResult.participants?.length || 0}
+                      {lastSessionResult.participantCount ||
+                        lastSessionResult.participants?.length ||
+                        0}
                     </div>
-                    <div className="text-sm text-gray-600">Total Participants</div>
+                    <div className="text-sm text-gray-600">
+                      Total Participants
+                    </div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-warning-600">
@@ -372,26 +382,28 @@ const HomePage = () => {
                     <div className="text-sm text-gray-600">Winners</div>
                   </div>
                 </div>
-                {lastSessionResult.winners && lastSessionResult.winners.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Winners:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {lastSessionResult.winners.map((winner) => (
-                        <span
-                          key={winner.id}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-100 text-success-800"
-                        >
-                          {winner.username} (#{winner.selectedNumber})
-                        </span>
-                      ))}
+                {lastSessionResult.winners &&
+                  lastSessionResult.winners.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        Winners:
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {lastSessionResult.winners.map((winner) => (
+                          <span
+                            key={winner.id}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-100 text-success-800"
+                          >
+                            {winner.username} (#{winner.selectedNumber})
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           )}
 
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
             <button
               onClick={() => navigate("/leaderboard")}
@@ -401,14 +413,9 @@ const HomePage = () => {
               <h3 className="font-semibold text-gray-900">Leaderboard</h3>
               <p className="text-sm text-gray-600">View top players</p>
             </button>
-           
           </div>
-
-
         </div>
       </div>
-
-
     </div>
   );
 };

@@ -144,7 +144,9 @@ class GameController {
       // This handles cases where session has ended but user tries to leave
       res.json({
         success: true,
-        message: removed ? "Successfully left session" : "No active session to leave",
+        message: removed
+          ? "Successfully left session"
+          : "No active session to leave",
       });
     } catch (error: any) {
       logger.error("Leave session error:", error);
@@ -156,7 +158,10 @@ class GameController {
     }
   }
 
-  async getUserSession(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async getUserSession(
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> {
     try {
       const userId = req.user?.id;
 
@@ -336,7 +341,7 @@ class GameController {
   async getSessionDetails(req: Request, res: Response): Promise<any> {
     try {
       const { sessionId } = req.params;
-      if(!sessionId) {
+      if (!sessionId) {
         return res.status(400).json({
           success: false,
           message: "Session ID is required",
@@ -351,13 +356,15 @@ class GameController {
         });
         return;
       }
-if(!sessionId) {
-  return res.status(400).json({
-    success: false,
-    message: "Session ID is required",
-  });
-}
-      const participants = await GameService.getSessionParticipants(parseInt(sessionId));
+      if (!sessionId) {
+        return res.status(400).json({
+          success: false,
+          message: "Session ID is required",
+        });
+      }
+      const participants = await GameService.getSessionParticipants(
+        parseInt(sessionId)
+      );
       const winners = await GameService.getSessionWinners(parseInt(sessionId));
 
       res.json({
@@ -390,6 +397,47 @@ if(!sessionId) {
       });
     }
   }
+
+  async getUserStats(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: "User not authenticated",
+        });
+        return;
+      }
+
+      const user = await User.findById(userId);
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: {
+          stats: {
+            totalWins: user.total_wins,
+            totalLosses: user.total_losses,
+          },
+        },
+      });
+    } catch (error: any) {
+      logger.error("Get user stats error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to get user stats",
+        error: error.message,
+      });
+    }
+  }
 }
 
-export default new GameController(); 
+export default new GameController();

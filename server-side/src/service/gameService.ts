@@ -2,7 +2,13 @@ import GameSession from "../models/game.js";
 import PlayerSession from "../models/gamePlayer.js";
 import User from "../models/UserModel.js";
 import logger from "../utils/logger.js";
-import { GameServiceInterface, SessionInfo, SessionResult, Participant, Winner } from "../types/index.js";
+import {
+  GameServiceInterface,
+  SessionInfo,
+  SessionResult,
+  Participant,
+  Winner,
+} from "../types/index.js";
 
 class GameService implements GameServiceInterface {
   public activeSession: any = null;
@@ -14,12 +20,14 @@ class GameService implements GameServiceInterface {
   constructor() {
     this.activeSession = null;
     this.sessionTimer = null;
-    this.sessionDuration = parseInt(process.env.SESSION_DURATION || '30000');
-    this.sessionInterval = parseInt(process.env.SESSION_INTERVAL || '30000');
-    this.maxPlayers = parseInt(process.env.MAX_PLAYERS_PER_SESSION || '10');
+    this.sessionDuration = parseInt(process.env.SESSION_DURATION || "30000");
+    this.sessionInterval = parseInt(process.env.SESSION_INTERVAL || "30000");
+    this.maxPlayers = parseInt(process.env.MAX_PLAYERS_PER_SESSION || "10");
   }
 
-  async createSession(userId: number): Promise<{ alreadyActive: boolean; session: SessionInfo | null }> {
+  async createSession(
+    userId: number
+  ): Promise<{ alreadyActive: boolean; session: SessionInfo | null }> {
     try {
       this.activeSession = await GameSession.findActive();
 
@@ -65,15 +73,15 @@ class GameService implements GameServiceInterface {
       if (!session) throw new Error("Session not found");
 
       await session.activate();
+      session.start_time = new Date();
       this.activeSession = session;
       this.startSessionTimer();
-
 
       if (global.io) {
         global.io.to("game_room").emit("session_started", {
           sessionId: sessionId,
           timeRemaining: this.sessionDuration / 1000,
-          message: "New session started"
+          message: "New session started",
         });
       }
 
@@ -107,17 +115,17 @@ class GameService implements GameServiceInterface {
         this.activeSession.id,
         selectedNumber
       );
-      
+
       const user = await User.findById(userId);
       if (global.io && user) {
         global.io.to("game_room").emit("player_joined", {
           sessionId: this.activeSession.id,
           userId: userId,
           username: user.username,
-          selectedNumber: selectedNumber
+          selectedNumber: selectedNumber,
         });
       }
-      
+
       logger.info(
         `User ${userId} joined session ${this.activeSession.id} with number ${selectedNumber}`
       );
@@ -132,14 +140,19 @@ class GameService implements GameServiceInterface {
   async leaveSession(userId: number): Promise<boolean> {
     try {
       const userSession = await PlayerSession.getUserActiveSession(userId);
-      
+
       if (!userSession) {
         return true;
       }
       if (!this.activeSession) {
-        const removed = await PlayerSession.removeFromSession(userId, userSession.session_id);
+        const removed = await PlayerSession.removeFromSession(
+          userId,
+          userSession.session_id
+        );
         if (removed) {
-          logger.info(`User ${userId} removed from completed session ${userSession.session_id}`);
+          logger.info(
+            `User ${userId} removed from completed session ${userSession.session_id}`
+          );
         }
         return removed;
       }
@@ -148,17 +161,17 @@ class GameService implements GameServiceInterface {
         userId,
         this.activeSession.id
       );
-      
+
       if (removed) {
         const user = await User.findById(userId);
         if (global.io && user) {
           global.io.to("game_room").emit("player_left", {
             sessionId: this.activeSession.id,
             userId: userId,
-            username: user.username
+            username: user.username,
           });
         }
-        
+
         logger.info(`User ${userId} left session ${this.activeSession.id}`);
       }
 
@@ -186,7 +199,9 @@ class GameService implements GameServiceInterface {
 
       await this.updateUserStats(sessionId);
 
-      const participants = await PlayerSession.getSessionParticipants(sessionId);
+      const participants = await PlayerSession.getSessionParticipants(
+        sessionId
+      );
       const winners = await PlayerSession.getSessionWinners(sessionId);
 
       logger.info(
@@ -199,7 +214,7 @@ class GameService implements GameServiceInterface {
           sessionId,
           winningNumber,
           participantCount: participants.length,
-          message: "Session ended"
+          message: "Session ended",
         });
 
         global.io.to("game_room").emit("game_result", {
@@ -221,8 +236,6 @@ class GameService implements GameServiceInterface {
       }
 
       this.activeSession = null;
-
-
 
       return {
         sessionId,
@@ -260,16 +273,16 @@ class GameService implements GameServiceInterface {
     // Start countdown updates
     const countdownInterval = setInterval(() => {
       const timeRemaining = this.calculateTimeRemaining();
-      
+
       if (timeRemaining <= 0) {
         clearInterval(countdownInterval);
         return;
       }
-      
+
       // Emit countdown update
       if (global.io) {
         global.io.to("game_room").emit("countdown_update", {
-          timeRemaining: timeRemaining
+          timeRemaining: timeRemaining,
         });
       }
     }, 1000);
@@ -290,7 +303,7 @@ class GameService implements GameServiceInterface {
     }
 
     const timeRemaining = this.calculateTimeRemaining();
-
+    console.log(timeRemaining);
     if (timeRemaining <= 0 && this.activeSession.status === "active") {
       await this.completeSession();
       return null;
@@ -320,7 +333,10 @@ class GameService implements GameServiceInterface {
   }
 
   calculateTimeRemaining(): number {
-    if (!this.activeSession || !this.activeSession.start_time) return 0;
+    // if (!this.activeSession || !this.activeSession.start_time) return 0;
+    if (!this.activeSession?.start_time) {
+      return 0;
+    }
 
     const startTime = new Date(this.activeSession.start_time).getTime();
     const elapsed = Date.now() - startTime;
@@ -352,4 +368,4 @@ class GameService implements GameServiceInterface {
   }
 }
 
-export default new GameService(); 
+export default new GameService();

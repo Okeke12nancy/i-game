@@ -33,7 +33,7 @@ class StartUpServer {
     this.server = createServer(this.app);
     this.io = new Server(this.server, {
       cors: {
-        origin: process.env.CLIENT_URL,
+        origin: '*',
         methods: ["GET", "POST"],
       },
     });
