@@ -16,16 +16,15 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user") || "{}");
-    setUser(userData);
-
+    const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+    setUser(localUser);
     // Connect to socket
     socket.connect();
     socket.joinGameRoom();
 
     // Load active session
     loadActiveSession();
-
+    loadUserStats();
     // Socket event listeners
     socket.on("session_started", handleSessionStarted);
     socket.on("session_ended", handleSessionEnded);
@@ -74,6 +73,15 @@ const HomePage = () => {
     setActiveSession(data.session);
     setTimeRemaining(data.timeRemaining || 20);
     toast.success("New game session started!");
+  };
+
+  const loadUserStats = async () => {
+    const response = await api.refreshUserStats();
+    if (response.success) {
+      localStorage.setItem("user", JSON.stringify(response.data));
+      // setUser(response.data);
+    }
+    return response.data;
   };
 
   const handleSessionEnded = (data) => {
