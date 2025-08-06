@@ -21,9 +21,7 @@ const GamePage = () => {
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
     setUser(userData);
 
-
     loadSessionData();
-
 
     socket.on("session_ended", handleSessionEnded);
     socket.on("game_result", handleGameResult);
@@ -50,22 +48,22 @@ const GamePage = () => {
     return () => clearInterval(interval);
   }, [timeRemaining, gameEnded]);
 
-  
   useEffect(() => {
-            if (gameEnded) return;
+    if (gameEnded) return;
 
     const sessionCheckInterval = setInterval(async () => {
       try {
         const response = await api.getActiveSession();
-        if (!response.success || !response.data.activeSession) {
-  
+        // console.log(`RESPONSE`, response);
+        // if (!response.success || !response.data.activeSession) {
+        if (!response.success) {
           toast.info("Session has ended. Redirecting to lobby...");
           navigate("/session-summary");
         }
       } catch (error) {
         console.warn("Error checking session status:", error);
       }
-          }, 10000);
+    }, 10000);
 
     return () => clearInterval(sessionCheckInterval);
   }, [gameEnded, navigate]);
@@ -81,7 +79,6 @@ const GamePage = () => {
         setActiveSession(activeResponse.data.activeSession);
         setTimeRemaining(activeResponse.data.activeSession.timeRemaining || 0);
       } else {
-    
         toast.info("No active session found. Redirecting to lobby...");
         navigate("/");
         return;
@@ -94,7 +91,7 @@ const GamePage = () => {
     } catch (error) {
       console.error("Error loading session data:", error);
       toast.error("Failed to load session data");
-      
+
       navigate("/");
     }
   };
@@ -103,18 +100,20 @@ const GamePage = () => {
     setGameEnded(true);
     setTimeRemaining(0);
     setGameResult(data);
-    toast.success(`Session ended! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
+    toast.success(
+      `Session ended! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`
+    );
     setTimeout(() => {
-      navigate("/session-summary", { 
-        state: { 
+      navigate("/session-summary", {
+        state: {
           sessionData: {
             winningNumber: data.winningNumber,
             participantCount: data.participantCount,
             winnerCount: data.winners?.length || 0,
             participants: data.participants || [],
             winners: data.winners || [],
-          }
-        } 
+          },
+        },
       });
     }, 3000);
   };
@@ -122,18 +121,20 @@ const GamePage = () => {
   const handleGameResult = (data) => {
     setGameResult(data);
     setGameEnded(true);
-    toast.success(`Game results are in! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`);
+    toast.success(
+      `Game results are in! Winning number: ${data.winningNumber}, Participants: ${data.participantCount}`
+    );
     setTimeout(() => {
-      navigate("/session-summary", { 
-        state: { 
+      navigate("/session-summary", {
+        state: {
           sessionData: {
             winningNumber: data.winningNumber,
             participantCount: data.participantCount,
             winnerCount: data.winners?.length || 0,
             participants: data.participants || [],
             winners: data.winners || [],
-          }
-        } 
+          },
+        },
       });
     }, 3000);
   };
@@ -177,12 +178,10 @@ const GamePage = () => {
   const handleLeaveSession = async () => {
     setLoading(true);
     try {
-
       await api.leaveSession();
       toast.success("Left the session");
       navigate("/");
     } catch (error) {
-
       console.warn("Error leaving session:", error);
       toast.info("Redirecting to lobby...");
       navigate("/");
@@ -241,7 +240,9 @@ const GamePage = () => {
         <div className="text-lg">
           Total Participants:{" "}
           <span className="font-bold text-blue-600">
-            {gameResult.participantCount || gameResult.participants?.length || 0}
+            {gameResult.participantCount ||
+              gameResult.participants?.length ||
+              0}
           </span>
         </div>
         <div className="text-sm text-gray-600">
@@ -257,7 +258,6 @@ const GamePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
@@ -282,10 +282,8 @@ const GamePage = () => {
         </div>
       </div>
 
-      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
           <div className="lg:col-span-2">
             <div className="card p-8">
               <div className="text-center space-y-6">
@@ -310,9 +308,7 @@ const GamePage = () => {
             </div>
           </div>
 
-          
           <div className="space-y-6">
-            
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Users className="h-5 w-5 mr-2" />
@@ -341,7 +337,6 @@ const GamePage = () => {
               </div>
             </div>
 
-            
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Clock className="h-5 w-5 mr-2" />
@@ -373,7 +368,6 @@ const GamePage = () => {
               </div>
             </div>
 
-            
             {gameEnded && gameResult && (
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -382,15 +376,21 @@ const GamePage = () => {
                 </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Winning Number:</span>
+                    <span className="text-sm text-gray-600">
+                      Winning Number:
+                    </span>
                     <span className="text-lg font-bold text-success-600">
                       {gameResult.winningNumber}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Total Participants:</span>
+                    <span className="text-sm text-gray-600">
+                      Total Participants:
+                    </span>
                     <span className="text-lg font-bold text-blue-600">
-                      {gameResult.participantCount || gameResult.participants?.length || 0}
+                      {gameResult.participantCount ||
+                        gameResult.participants?.length ||
+                        0}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -403,7 +403,6 @@ const GamePage = () => {
               </div>
             )}
 
-            
             {gameEnded &&
               gameResult?.winners &&
               gameResult.winners.length > 0 && (
