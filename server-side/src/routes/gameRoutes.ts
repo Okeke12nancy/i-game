@@ -29,4 +29,6 @@ gameRouter.get("/sessions/recent", GameController.getRecentSessions);
 
 gameRouter.get("/sessions/:sessionId", GameController.getSessionDetails);
 
-export default gameRouter; 
+gameRouter.get("/user/stats", GameController.getUserStats);
+
+export default gameRouter;
