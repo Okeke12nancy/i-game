@@ -3,6 +3,7 @@ import axios from 'axios';
 class ApiService {
   constructor() {
     this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+    // this.baseURL = process.env.REACT_APP_API_URL || 'https://nancy.carevia.icu/api';
     this.client = axios.create({
       baseURL: this.baseURL,
       headers: {
